@@ -1,6 +1,23 @@
+#include <iostream>
+#include <vector>
+
 #include "PPMExporter.hpp"
 
-int GetColorPixel(int x, int y);
+struct Vector3 {
+ public:
+  float x;
+  float y;
+  float z;
+};
+
+struct Triangle {
+ public:
+  Vector3 v0;
+  Vector3 v1;
+  Vector3 v2;
+};
+
+int GetColorPixel(const std::vector<Triangle>& triangles, int x, int y);
 
 auto height = 512;
 auto width = 512;
@@ -8,9 +25,27 @@ auto width = 512;
 int main(void) {
   int data[height * width];
 
+  std::vector<Triangle> triangles;
+
+  Triangle triangle;
+
+  triangle.v0.x = -1;
+  triangle.v0.y = -1;
+  triangle.v0.z = -1;
+
+  triangle.v1.x = 0;
+  triangle.v1.y = 1;
+  triangle.v1.z = 0;
+
+  triangle.v2.x = 0;
+  triangle.v2.y = 0;
+  triangle.v2.z = 1;
+
+  triangles.push_back(triangle);
+
   for (auto y = 0; y < height; y += 1) {
     for (auto x = 0; x < width; x += 1) {
-      data[y * height + x] = GetColorPixel(x, y);
+      data[y * height + x] = GetColorPixel(triangles, x, y);
     }
   }
 
@@ -26,38 +61,72 @@ int main(void) {
   return 0;
 }
 
-struct Vector3 {
-  float x;
-  float y;
-  float z;
-};
-
 struct Ray {
+ public:
   Vector3 origin;
   Vector3 direction;
 };
 
-Ray GetRay(int x, int y);
-float SphereIntersection(Ray ray);
-Vector3 SphereNormal(Ray ray, float time);
+Vector3 operator+(Vector3 left, Vector3 right) {
+  left.x += right.x;
+  left.y += right.y;
+  left.z += right.z;
+  return left;
+}
 
-int GetColorPixel(int x, int y) {
+Vector3 operator-(Vector3 left, Vector3 right) {
+  left.x -= right.x;
+  left.y -= right.y;
+  left.z -= right.z;
+  return left;
+}
+
+Vector3 operator*(Vector3 left, Vector3 right) {
+  left.x *= right.x;
+  left.y *= right.y;
+  left.z *= right.z;
+  return left;
+}
+
+Vector3 operator*(Vector3 left, float right) {
+  left.x *= right;
+  left.y *= right;
+  left.z *= right;
+  return left;
+}
+
+Vector3 cross(Vector3 left, Vector3 right) {
+  Vector3 result;
+
+  result.x = left.y * right.z - left.z * right.y;
+  result.y = left.z * right.x - left.x * right.z;
+  result.z = left.x * right.y - left.y * right.x;
+
+  return result;
+}
+
+float dot(Vector3 left, Vector3 right) {
+  return left.x * right.x + left.y * right.y + left.z * right.z;
+}
+
+Vector3 normalize(Vector3 vector) {
+  auto length =
+      sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+
+  vector.x /= length;
+  vector.y /= length;
+  vector.z /= length;
+
+  return vector;
+}
+
+Ray GetRay(int x, int y);
+int IntersectTriangleMesh(Ray, const std::vector<Triangle>&);
+
+int GetColorPixel(const std::vector<Triangle>& triangles, int x, int y) {
   auto ray = GetRay(x, y);
 
-  auto time = SphereIntersection(ray);
-
-  if (time < 0.0f) {
-    return 0;
-  }
-
-  auto normal = SphereNormal(ray, time);
-
-  normal.x = normal.x < 0.0f ? -normal.x : normal.x;
-  normal.y = normal.y < 0.0f ? -normal.y : normal.y;
-  normal.z = normal.z < 0.0f ? -normal.z : normal.z;
-
-  return ((int)(normal.x * 255) << 16 | (int)(normal.y * 255) << 8 |
-          (int)(normal.z * 255));
+  return IntersectTriangleMesh(ray, triangles);
 }
 
 Ray GetRay(int x, int y) {
@@ -85,33 +154,63 @@ Ray GetRay(int x, int y) {
   return result;
 }
 
-Vector3 SphereNormal(Ray ray, float time);
+bool TriangleIntersect(Ray ray, Triangle triangle, float& t) {
+  const float EPSILON = 0.000001;
+  Vector3 edge1, edge2, h, s, q;
+  float a, f, u, v;
 
-float SphereIntersection(Ray ray) {
-  auto b = ray.origin.x * ray.direction.x + ray.origin.y * ray.direction.y +
-           ray.origin.z * ray.direction.z;
+  edge1 = triangle.v1 - triangle.v0;
+  edge2 = triangle.v2 - triangle.v0;
 
-  auto c = ray.origin.x * ray.origin.x + ray.origin.y * ray.origin.y +
-           ray.origin.z * ray.origin.z - 1.0f;
+  h = cross(ray.direction, edge2);
+  a = dot(edge1, h);
 
-  auto h = b * b - c;
+  if (a > -EPSILON && a < EPSILON) return false;
 
-  return h < 0.0f ? -1.0f : -b - h;
+  f = 1.0f / a;
+  s = ray.origin - triangle.v0;
+  u = f * dot(s, h);
+
+  if (u < 0.0 || u > 1.0) return false;
+
+  q = cross(s, edge1);
+  v = f * dot(ray.direction, q);
+
+  if (v < 0.0 || u + v > 1.0) return false;
+
+  t = f * dot(edge2, q);
+
+  if (t > EPSILON) return true;
+
+  return false;
 }
 
-Vector3 SphereNormal(Ray ray, float time) {
-  Vector3 result;
+int IntersectTriangleMesh(Ray ray, const std::vector<Triangle>& triangles) {
+  bool intersection = false;
+  float time = std::numeric_limits<float>::max();
+  Triangle triangle;
 
-  result.x = ray.origin.x + ray.direction.x * time;
-  result.y = ray.origin.y + ray.direction.y * time;
-  result.z = ray.origin.z + ray.direction.z * time;
+  for (const Triangle& currentTriangle : triangles) {
+    float tmp;
+    if (TriangleIntersect(ray, currentTriangle, tmp) && tmp < time) {
+      time = tmp;
+      intersection = true;
+      triangle = currentTriangle;
+    }
+  }
 
-  auto length =
-      sqrtf(result.x * result.x + result.y * result.y + result.z * result.z);
+  if (!intersection) {
+    return 0;
+  }
 
-  result.x /= length;
-  result.y /= length;
-  result.z /= length;
+  Vector3 edge1 = triangle.v1 - triangle.v0;
+  Vector3 edge2 = triangle.v2 - triangle.v0;
+  Vector3 normal = normalize(cross(edge1, edge2));
 
-  return result;
+  normal.x = normal.x < 0.0f ? -normal.x : normal.x;
+  normal.y = normal.y < 0.0f ? -normal.y : normal.y;
+  normal.z = normal.z < 0.0f ? -normal.z : normal.z;
+
+  return ((int)(normal.x * 255) << 16 | (int)(normal.y * 255) << 8 |
+          (int)(normal.z * 255));
 }
