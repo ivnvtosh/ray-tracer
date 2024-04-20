@@ -16,10 +16,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 include_directories(
+  Engine
+  OBJImporter
   PPMExporter
 )
 
 add_executable(ray-tracer
   main.cpp
+  OBJImporter/OBJImporter.cpp
   PPMExporter/PPMExporter.cpp
 )

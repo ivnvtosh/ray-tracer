@@ -36,9 +36,10 @@ void PPMExporter::Export(PPMRequest request) const {
   stream << "P3" << "\n";
   stream << request.width << " " << request.height << " " << "255" << "\n";
 
+  int color;
   for (auto y = 0; y < request.height; y += 1) {
     for (auto x = 0; x < request.width; x += 1) {
-      int color = request.data[y * request.height + x];
+      color = request.data[y * request.height + x];
 
       stream << (color >> 16 & 0xFF) << "\n"
              << (color >> 8 & 0xFF) << "\n"
