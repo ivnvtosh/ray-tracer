@@ -20,6 +20,7 @@ include_directories(
   OBJImporter
   PPMExporter
   Render
+  Scene
 )
 
 add_executable(ray-tracer
@@ -27,4 +28,5 @@ add_executable(ray-tracer
   OBJImporter/OBJImporter.cpp
   PPMExporter/PPMExporter.cpp
   Render/Render.cpp
+  Scene/Scene.cpp
 )
