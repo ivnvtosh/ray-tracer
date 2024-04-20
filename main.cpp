@@ -10,6 +10,8 @@ int main(void) {
   logger.TimeEndImport();
   logger.LogTimeDurationImport();
 
+  scene.render.Setup();
+  
   logger.TimeStartRender();
   scene.Render();
   logger.TimeEndRender();

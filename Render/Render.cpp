@@ -1,166 +1,249 @@
 #include "Render.hpp"
 
-using namespace Engine;
+#include <iostream>
 
-Vector3 operator+(Vector3 left, Vector3 right) {
-  left.x += right.x;
-  left.y += right.y;
-  left.z += right.z;
-  return left;
+struct s_vector_3 {
+  float x;
+  float y;
+  float z;
+};
+
+struct s_material {
+  struct s_vector_3 color;
+};
+
+struct s_triangle {
+  struct s_vector_3 vertices[3];
+  struct s_material material;
+};
+
+struct s_camera {
+  int height;
+  int width;
+  float fov;
+  float focus;
+  struct s_vector_3 position;
+  int number;
+};
+
+struct s_ray {
+  struct s_vector_3 origin;
+  struct s_vector_3 direction;
+};
+
+void Engine::Render::Setup() {
+  GetDeviceId();
+  CreateContext();
+  CreateCommandQueue();
+  CreateKernel();
+  LoadMem();
+  SetArgument();
 }
 
-Vector3 operator-(Vector3 left, Vector3 right) {
-  left.x -= right.x;
-  left.y -= right.y;
-  left.z -= right.z;
-  return left;
+void Engine::Render::Rendering(int *data) {
+  int err;
+
+  size_t items = camera.height * camera.width;
+
+  err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &items, NULL, 0, NULL,
+                               NULL);
+  if (err != 0) {
+    throw;
+  }
+
+  auto bytes = camera.height * camera.width * sizeof(int);
+  err = clEnqueueReadBuffer(queue, output, CL_TRUE, 0, bytes, data, 0, NULL,
+                            NULL);
+  if (err != 0) {
+    throw;
+  }
+
+  std::cout << *data << std::endl;
 }
 
-Vector3 operator*(Vector3 left, Vector3 right) {
-  left.x *= right.x;
-  left.y *= right.y;
-  left.z *= right.z;
-  return left;
-}
+void Engine::Render::GetDeviceId() {
+  int err;
 
-Vector3 operator*(Vector3 left, float right) {
-  left.x *= right;
-  left.y *= right;
-  left.z *= right;
-  return left;
-}
+  err = clGetPlatformIDs(1, &platform, NULL);
+  if (err != 0) {
+    throw;
+  }
 
-Vector3 operator*(float left, Vector3 right) {
-  right.x *= left;
-  right.y *= left;
-  right.z *= left;
-  return right;
-}
-
-Vector3 cross(Vector3 left, Vector3 right) {
-  Vector3 result;
-  result.x = left.y * right.z - left.z * right.y;
-  result.y = left.z * right.x - left.x * right.z;
-  result.z = left.x * right.y - left.y * right.x;
-  return result;
-}
-
-float dot(Vector3 left, Vector3 right) {
-  return left.x * right.x + left.y * right.y + left.z * right.z;
-}
-
-Vector3 normalize(Vector3 vector) {
-  auto length =
-      sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-
-  vector.x /= length;
-  vector.y /= length;
-  vector.z /= length;
-
-  return vector;
-}
-
-float lengthSquared(Vector3 vector) {
-  return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
-}
-
-void Render::Rendering(int* data) {
-  for (auto y = 0; y < camera.height; y += 1) {
-    for (auto x = 0; x < camera.width; x += 1) {
-      data[y * camera.height + x] = GetColorPixel(x, y);
-    }
+  err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+  if (err != 0) {
+    throw;
   }
 }
 
-int Render::GetColorPixel(int x, int y) {
-  auto ray = GetRay(x, y);
+void Engine::Render::CreateContext() {
+  int err;
 
-  Engine::Triangle hitTriangle;
-  float time = std::numeric_limits<float>::max();
-  bool hit = false;
-
-  for (auto triangle : mesh) {
-    float t;
-    if (RayPolygonIntersect(ray, triangle, t) && t < time) {
-      time = t;
-      hitTriangle = triangle;
-      hit = true;
-    }
+  context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+  if (err != 0) {
+    throw;
   }
-
-  if (!hit) {
-    return 0;
-  }
-
-  Engine::Vector3 color = hitTriangle.material.color;
-
-  color.x = std::min(1.0f, std::max(0.0f, color.x)) * 255;
-  color.y = std::min(1.0f, std::max(0.0f, color.y)) * 255;
-  color.z = std::min(1.0f, std::max(0.0f, color.z)) * 255;
-
-  return (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
 }
 
-Render::Ray Render::GetRay(int x, int y) {
-  Ray result;
+void Engine::Render::CreateCommandQueue() {
+  int err;
 
-  result.origin.x = -0.01f;
-  result.origin.y = 0.99f;
-  result.origin.z = 3.39f;
-
-  result.direction.z = -camera.focus;
-  result.direction.y = -(y - camera.height / 2.0f);
-  result.direction.x = (x - camera.width / 2.0f);
-
-  auto length = sqrtf(result.direction.x * result.direction.x +
-                      result.direction.y * result.direction.y +
-                      result.direction.z * result.direction.z);
-
-  result.direction.x /= length;
-  result.direction.y /= length;
-  result.direction.z /= length;
-
-  return result;
+  queue = clCreateCommandQueue(context, device, 0, &err);
+  if (err != 0) {
+    throw;
+  }
 }
 
-bool Render::RayPolygonIntersect(const Ray& ray, const Triangle& triangle,
-                                 float& t) {
-  if (lengthSquared(cross(triangle.vertices[1] - triangle.vertices[0],
-                          triangle.vertices[2] - triangle.vertices[0])) <
-      0.00001f) {
-    return false;
+void Engine::Render::CreateKernel() {
+  int err;
+
+  auto program = CreateProgram();
+
+  err = clBuildProgram(program, 1, &device, "-I ../render/cl", NULL, NULL);
+  if (err != 0) {
+    char *log;
+    size_t size;
+    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL,
+                          &size);
+    log = (char *)malloc(size);
+    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, log,
+                          NULL);
+
+    std::cout << log << std::endl;
+
+    free(log);
   }
 
-  Vector3 normal =
-      normalize(cross(triangle.vertices[1] - triangle.vertices[0],
-                      triangle.vertices[2] - triangle.vertices[0]));
+  kernel = clCreateKernel(program, "render", &err);
+  if (err != 0) {
+    throw;
+  }
+}
 
-  float denominator = dot(ray.direction, normal);
-  if (std::abs(denominator) < 0.00001f) {
-    return false;
+cl_program Engine::Render::CreateProgram() {
+  cl_program program;
+  char **program_buf;
+  size_t *program_size;
+  int files_num;
+  int err;
+
+  files_num = 1;
+
+  program_buf = (char **)malloc(sizeof(char *) * files_num);
+  program_size = (size_t *)malloc(sizeof(size_t) * files_num);
+  ReadFilesToBuffer(program_buf, program_size);
+  program =
+      clCreateProgramWithSource(context, files_num, (const char **)program_buf,
+                                (const size_t *)program_size, &err);
+  if (err != 0) {
+    throw;
   }
 
-  float numerator = dot(triangle.vertices[0] - ray.origin, normal);
-  t = numerator / denominator;
+  err = -1;
 
-  if (t < 0.0f) {
-    return false;
+  while (++err < files_num) {
+    free(program_buf[err]);
   }
 
-  Vector3 point = ray.origin + t * ray.direction;
-  Vector3 v0v1 = triangle.vertices[1] - triangle.vertices[0];
-  Vector3 v0v2 = triangle.vertices[2] - triangle.vertices[0];
-  Vector3 v0p = point - triangle.vertices[0];
+  free(program_buf);
+  free(program_size);
 
-  float dot00 = dot(v0v1, v0v1);
-  float dot01 = dot(v0v1, v0v2);
-  float dot02 = dot(v0v1, v0p);
-  float dot11 = dot(v0v2, v0v2);
-  float dot12 = dot(v0v2, v0p);
+  return program;
+}
 
-  float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
-  float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-  float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+void Engine::Render::ReadFilesToBuffer(char **program_buf,
+                                       size_t *program_size) {
+  program_buf[0] = ReadFileToBuffer("../Render/cl/kernel.cl", &program_size[3]);
+}
 
-  return (u >= 0.0f) && (v >= 0.0f) && (u + v <= 1.0f);
+char *Engine::Render::ReadFileToBuffer(const char *name, size_t *program_size) {
+  size_t file_size;
+  FILE *fd;
+  char *buf;
+
+  fd = fopen(name, "r");
+  if (!fd) throw;
+  fseek(fd, 0, SEEK_END);
+  file_size = ftell(fd);
+  rewind(fd);
+  buf = (char *)malloc(file_size + 1);
+  fread(buf, sizeof(char), file_size, fd);
+  buf[file_size] = '\0';
+  fclose(fd);
+  *program_size = file_size;
+
+  return buf;
+}
+
+void Engine::Render::LoadMem() {
+  int err;
+
+  output =
+      clCreateBuffer(context, CL_MEM_READ_WRITE,
+                     camera.height * camera.width * sizeof(int), NULL, &err);
+  if (err != 0) {
+    throw;
+  }
+
+  auto size = mesh.size() * sizeof(struct s_triangle);
+  input = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &err);
+  if (err != 0) {
+    throw;
+  }
+
+  struct s_triangle *triangles =
+      (struct s_triangle *)malloc(mesh.size() * sizeof(struct s_triangle));
+
+  for (auto i = 0u; i < mesh.size(); i += 1) {
+    triangles[i].material.color.x = mesh[i].material.color.x;
+    triangles[i].material.color.y = mesh[i].material.color.y;
+    triangles[i].material.color.z = mesh[i].material.color.z;
+
+    triangles[i].vertices[0].x = mesh[i].vertices[0].x;
+    triangles[i].vertices[0].y = mesh[i].vertices[0].y;
+    triangles[i].vertices[0].z = mesh[i].vertices[0].z;
+
+    triangles[i].vertices[1].x = mesh[i].vertices[1].x;
+    triangles[i].vertices[1].y = mesh[i].vertices[1].y;
+    triangles[i].vertices[1].z = mesh[i].vertices[1].z;
+
+    triangles[i].vertices[2].x = mesh[i].vertices[2].x;
+    triangles[i].vertices[2].y = mesh[i].vertices[2].y;
+    triangles[i].vertices[2].z = mesh[i].vertices[2].z;
+  }
+
+  err = clEnqueueWriteBuffer(queue, input, CL_TRUE, 0, size, triangles, 0, NULL,
+                             NULL);
+  if (err != 0) {
+    throw;
+  }
+}
+
+void Engine::Render::SetArgument() {
+  int err;
+
+  err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
+  if (err != 0) {
+    throw;
+  }
+
+  struct s_camera c_camera;
+
+  c_camera.height = camera.height;
+  c_camera.width = camera.width;
+  c_camera.fov = camera.fov;
+  c_camera.focus = camera.focus;
+  c_camera.position.x = camera.position.x;
+  c_camera.position.y = camera.position.y;
+  c_camera.position.z = camera.position.z;
+  c_camera.number = mesh.size();
+
+  err = clSetKernelArg(kernel, 1, sizeof(struct s_camera), &c_camera);
+  if (err != 0) {
+    throw;
+  }
+
+  err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
+  if (err != 0) {
+    throw;
+  }
 }

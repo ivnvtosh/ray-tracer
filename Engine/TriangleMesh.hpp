@@ -10,8 +10,8 @@ namespace Engine {
 
 struct Material {
  public:
-  std::string name;
   Vector3 color;
+  std::string name;
 };
 
 struct Triangle {

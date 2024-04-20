@@ -15,7 +15,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
+find_package(OpenCL REQUIRED)
+
 include_directories(
+  ${OPENCL_INCLUDE_DIR}
   Engine
   Logger
   OBJImporter
@@ -32,3 +35,5 @@ add_executable(ray-tracer
   Render/Render.cpp
   Scene/Scene.cpp
 )
+
+target_link_libraries(ray-tracer ${OpenCL_LIBRARIES})

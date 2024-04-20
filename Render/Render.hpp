@@ -1,6 +1,12 @@
 #ifndef RENDER_HPP
 #define RENDER_HPP
 
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl>
+#endif
+
 #include "TriangleMesh.hpp"
 
 namespace Engine {
@@ -11,6 +17,7 @@ struct Camera {
   int width;
   float fov;
   float focus;
+  Vector3 position;
 };
 
 class Render {
@@ -18,17 +25,28 @@ class Render {
   Camera camera;
   TriangleMesh mesh;
 
-  void Rendering(int* data);
+  void Setup();
+  void Rendering(int *data);
 
  private:
-  struct Ray {
-    Vector3 origin;
-    Vector3 direction;
-  };
+  cl_platform_id platform;
+  cl_device_id device;
+  cl_context context;
+  cl_command_queue queue;
+  cl_kernel kernel;
 
-  int GetColorPixel(int x, int y);
-  Ray GetRay(int x, int y);
-  bool RayPolygonIntersect(const Ray&, const Triangle&, float& t);
+  cl_mem input;
+  cl_mem output;
+
+  void GetDeviceId();
+  void CreateContext();
+  void CreateCommandQueue();
+  void CreateKernel();
+  cl_program CreateProgram();
+  void ReadFilesToBuffer(char **program_buf, size_t *program_size);
+  char *ReadFileToBuffer(const char *name, size_t *program_size);
+  void LoadMem();
+  void SetArgument();
 };
 
 }  // namespace Engine

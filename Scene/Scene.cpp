@@ -9,6 +9,9 @@ Scene::Scene() {
   render.camera.width = width;
   render.camera.fov = fov;
   render.camera.focus = height / 2 / std::tanf(fov / 2.0f * M_PI / 180.0f);
+  render.camera.position.x = -0.01f;
+  render.camera.position.y = 0.99f;
+  render.camera.position.z = 3.39f;
 
   data = (int*)malloc(height * width * sizeof(int));
 }
