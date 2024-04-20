@@ -17,6 +17,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
 
 include_directories(
   Engine
+  Logger
   OBJImporter
   PPMExporter
   Render
@@ -25,6 +26,7 @@ include_directories(
 
 add_executable(ray-tracer
   main.cpp
+  Logger/Logger.cpp
   OBJImporter/OBJImporter.cpp
   PPMExporter/PPMExporter.cpp
   Render/Render.cpp
