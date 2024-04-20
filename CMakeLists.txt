@@ -19,10 +19,12 @@ include_directories(
   Engine
   OBJImporter
   PPMExporter
+  Render
 )
 
 add_executable(ray-tracer
   main.cpp
   OBJImporter/OBJImporter.cpp
   PPMExporter/PPMExporter.cpp
+  Render/Render.cpp
 )

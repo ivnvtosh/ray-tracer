@@ -9,6 +9,10 @@
 
 using namespace Engine;
 
+float seadx = 0.9;
+float seady = 0.9;
+float seadz = 0.9;
+
 OBJRequest& OBJRequest::Filepath(std::string filepath) noexcept {
   this->filepath = filepath;
   return *this;
@@ -67,9 +71,13 @@ void OBJImporter::AddFace(std::istringstream& line) {
     faceIss >> index;
     triangle.vertices[i] = vertices[index - 1];
   }
-
+  seadx *= 0.9;
+  seady *= 0.95;
+  seadz *= 0.93;
   triangle.material = materials[currentMaterial];
-
+  triangle.material.color.x *= seadx;
+  triangle.material.color.y *= seady;
+  triangle.material.color.z *= seadz;
   triangles.push_back(triangle);
 }
 
