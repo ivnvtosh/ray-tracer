@@ -10,6 +10,7 @@ struct s_vector_3 {
 
 struct s_material {
   struct s_vector_3 color;
+  int is_light;
 };
 
 struct s_triangle {
@@ -57,8 +58,6 @@ void Engine::Render::Rendering(int *data) {
   if (err != 0) {
     throw;
   }
-
-  std::cout << *data << std::endl;
 }
 
 void Engine::Render::GetDeviceId() {
@@ -197,6 +196,8 @@ void Engine::Render::LoadMem() {
     triangles[i].material.color.x = mesh[i].material.color.x;
     triangles[i].material.color.y = mesh[i].material.color.y;
     triangles[i].material.color.z = mesh[i].material.color.z;
+
+    triangles[i].material.is_light = mesh[i].material.isLight;
 
     triangles[i].vertices[0].x = mesh[i].vertices[0].x;
     triangles[i].vertices[0].y = mesh[i].vertices[0].y;

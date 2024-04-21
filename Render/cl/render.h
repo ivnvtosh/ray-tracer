@@ -13,6 +13,7 @@ struct s_vector_3 {
 
 struct s_material {
   struct s_vector_3 color;
+  int is_light;
 };
 
 struct s_triangle {
@@ -35,6 +36,7 @@ struct s_ray {
 };
 
 typedef struct s_vector_3 t_vector_3;
+typedef struct s_material t_material;
 typedef struct s_triangle t_triangle;
 typedef struct s_camera t_camera;
 typedef struct s_ray t_ray;

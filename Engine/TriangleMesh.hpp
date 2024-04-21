@@ -12,6 +12,7 @@ struct Material {
  public:
   Vector3 color;
   std::string name;
+  bool isLight;
 };
 
 struct Triangle {

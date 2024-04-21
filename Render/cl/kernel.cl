@@ -1,61 +1,113 @@
 #include "render.h"
 
-int render_pixcel(global t_triangle *, t_camera, int x, int y);
+int render_pixcel(global t_triangle *, t_camera, unsigned int *seed, int x,
+                  int y);
 t_ray get_ray(t_camera camera, int x, int y);
-t_vector_3 render_one_times(global t_triangle *input, int number, t_ray ray);
-float triangle_intersect(t_triangle, t_ray);
+t_vector_3 render_reflections(global t_triangle *, t_camera, unsigned int *seed,
+                              int x, int y);
+t_material render_one_times(global t_triangle *, int number, unsigned int *seed,
+                            t_ray *);
+float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
+                         t_vector_3 *p_normal);
 int post_processing(t_vector_3 color);
+t_vector_3 get_random_unit_vecto_on_hemisphere(unsigned int *seed,
+                                               t_vector_3 normal);
+t_vector_3 reflect(t_vector_3 direction, t_vector_3 normal);
 
 kernel void render(global t_triangle *input, t_camera camera,
                    global int *output) {
   int gid;
   int y;
   int x;
+  unsigned int seed;
 
   gid = get_global_id(0);
   y = gid / camera.height;
   x = gid % camera.width;
+  seed = x * y;
 
-  output[y * camera.height + x] = render_pixcel(input, camera, x, y);
+  output[y * camera.height + x] = render_pixcel(input, camera, &seed, x, y);
 }
 
-int render_pixcel(global t_triangle *input, t_camera camera, int x, int y) {
-  t_ray ray;
+int render_pixcel(global t_triangle *input, t_camera camera, unsigned int *seed,
+                  int x, int y) {
   t_vector_3 color;
+  t_vector_3 result;
+
+  result.x = 0.0f;
+  result.y = 0.0f;
+  result.z = 0.0f;
+
+  for (int i = 0; i < 128; i += 1) {
+    color = render_reflections(input, camera, seed, x, y);
+    result.x += color.x;
+    result.y += color.y;
+    result.z += color.z;
+  }
+
+  result.x /= 512;
+  result.y /= 512;
+  result.z /= 512;
+
+  return post_processing(result);
+}
+
+static t_vector_3 apply_gamma_correction(t_vector_3 color, float gamma) {
+  float inverseGamma = 1.0f / gamma;
+  color.x = pow(color.x, inverseGamma);
+  color.y = pow(color.y, inverseGamma);
+  color.z = pow(color.z, inverseGamma);
+  return color;
+}
+
+int post_processing(t_vector_3 color) {
+  color = apply_gamma_correction(color, 2.2f);
+
+  color.x = min(1.0f, max(0.0f, color.x));
+  color.y = min(1.0f, max(0.0f, color.y));
+  color.z = min(1.0f, max(0.0f, color.z));
+
+  color.x *= 255;
+  color.y *= 255;
+  color.z *= 255;
+
+  return (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
+}
+
+t_vector_3 render_reflections(global t_triangle *input, t_camera camera,
+                              unsigned int *seed, int x, int y) {
+  t_vector_3 color;
+  t_material material;
+  t_ray ray;
+
+  color.x = 1.0f;
+  color.y = 1.0f;
+  color.z = 1.0f;
 
   ray = get_ray(camera, x, y);
-  color = render_one_times(input, camera.number, ray);
 
-  return post_processing(color);
-}
+  for (int i = 0; i < 128; i += 1) {
+    material = render_one_times(input, camera.number, seed, &ray);
 
-t_vector_3 render_one_times(global t_triangle *input, int number, t_ray ray) {
-  t_vector_3 color;
-  t_triangle hitTriangle;
-  float minTime;
-  float time;
-  int i;
-
-  minTime = -1.0f;
-  i = 0;
-  while (i < number) {
-    time = triangle_intersect(input[i], ray);
-
-    if (time >= 0.0f && (minTime == -1.0f || time < minTime)) {
-      minTime = time;
-      hitTriangle = input[i];
+    if (material.color.x < 0.0f) {
+      break;
     }
 
-    i += 1;
+    color.x *= material.color.x;
+    color.y *= material.color.y;
+    color.z *= material.color.z;
+
+    if (material.is_light) {
+      color.x *= 100.0f;
+      color.y *= 100.0f;
+      color.z *= 100.0f;
+      return color;
+    }
   }
 
-  if (minTime < 0.0f) {
-    color.x = 0.0f;
-    color.y = 0.0f;
-    color.z = 0.0f;
-  } else {
-    color = hitTriangle.material.color;
-  }
+  color.x = 0.0f;
+  color.y = 0.0f;
+  color.z = 0.0f;
 
   return color;
 }
@@ -64,9 +116,7 @@ t_ray get_ray(t_camera camera, int x, int y) {
   t_ray result;
   float length;
 
-  result.origin.x = camera.position.x;
-  result.origin.y = camera.position.y;
-  result.origin.z = camera.position.z;
+  result.origin = camera.position;
 
   result.direction.z = -(camera.focus);
   result.direction.y = -(y - camera.height / 2.0f);
@@ -83,15 +133,50 @@ t_ray get_ray(t_camera camera, int x, int y) {
   return result;
 }
 
-int post_processing(t_vector_3 color) {
-  color.x = min(1.0f, max(0.0f, color.x)) * 255;
-  color.y = min(1.0f, max(0.0f, color.y)) * 255;
-  color.z = min(1.0f, max(0.0f, color.z)) * 255;
+t_material render_one_times(global t_triangle *input, int number,
+                            unsigned int *seed, t_ray *ray) {
+  t_material material;
+  t_triangle hitTriangle;
+  float minTime;
+  float time;
+  int i;
+  t_vector_3 point;
+  t_vector_3 normal;
+  t_vector_3 hitPoint;
+  t_vector_3 hitNormal;
 
-  return (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
+  minTime = -1.0f;
+  i = 0;
+  while (i < number) {
+    time = triangle_intersect(input[i], *ray, &point, &normal);
+
+    if (time >= 0.0f && (minTime == -1.0f || time < minTime)) {
+      minTime = time;
+      hitTriangle = input[i];
+      hitPoint = point;
+      hitNormal = normal;
+    }
+
+    i += 1;
+  }
+
+  if (minTime < 0.0f) {
+    material.color.x = -1.0f;
+    return material;
+  }
+
+  ray->origin.x = hitPoint.x;
+  ray->origin.y = hitPoint.y;
+  ray->origin.z = hitPoint.z;
+
+  ray->direction = get_random_unit_vecto_on_hemisphere(seed, hitNormal);
+  // ray->direction = reflect(ray->direction, hitNormal);
+
+  return hitTriangle.material;
 }
 
-float triangle_intersect(t_triangle triangle, t_ray ray) {
+float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
+                         t_vector_3 *p_normal) {
   t_vector_3 sub_1;
   t_vector_3 sub_2;
   t_vector_3 cross;
@@ -132,11 +217,13 @@ float triangle_intersect(t_triangle triangle, t_ray ray) {
     return -1.0f;
   }
 
-  length = sqrt(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z);
+  length = sqrt(length_squared);
 
   normal.x = cross.x / length;
   normal.y = cross.y / length;
   normal.z = cross.z / length;
+
+  *p_normal = normal;
 
   denominator = ray.direction.x * normal.x + ray.direction.y * normal.y +
                 ray.direction.z * normal.z;
@@ -157,9 +244,11 @@ float triangle_intersect(t_triangle triangle, t_ray ray) {
     return -1.0f;
   }
 
-  point.x = ray.origin.x + time * ray.direction.x;
-  point.y = ray.origin.y + time * ray.direction.y;
-  point.z = ray.origin.z + time * ray.direction.z;
+  point.x = ray.origin.x + (time - 0.00001f) * ray.direction.x;
+  point.y = ray.origin.y + (time - 0.00001f) * ray.direction.y;
+  point.z = ray.origin.z + (time - 0.00001f) * ray.direction.z;
+
+  *p_point = point;
 
   sub_3.x = point.x - triangle.vertices[0].x;
   sub_3.y = point.y - triangle.vertices[0].y;
@@ -180,4 +269,53 @@ float triangle_intersect(t_triangle triangle, t_ray ray) {
   } else {
     return -1.0f;
   }
+}
+
+static float random(unsigned int *seed) {
+  float number;
+  *seed = 1664525u * *seed + (unsigned int)seed;
+  number = convert_float((*seed & 0x7FFFFFFF) / (float)0x7FFFFFFF);
+  return 2.0f * number - 1.0f;
+}
+
+t_vector_3 get_random_unit_vecto_on_hemisphere(unsigned int *seed,
+                                               t_vector_3 normal) {
+  t_vector_3 result;
+  float length;
+  float dot;
+
+  result.x = random(seed);
+  result.y = random(seed);
+  result.z = random(seed);
+
+  length =
+      sqrt(result.x * result.x + result.y * result.y + result.z * result.z);
+
+  result.x /= length;
+  result.y /= length;
+  result.z /= length;
+
+  dot = result.x * normal.x + result.y * normal.y + result.z * normal.z;
+
+  if (dot < 0) {
+    result.x = -result.x;
+    result.y = -result.y;
+    result.z = -result.z;
+  }
+
+  return result;
+}
+
+t_vector_3 reflect(t_vector_3 direction, t_vector_3 normal) {
+  t_vector_3 result;
+  float dot2x;
+
+  dot2x = 2.0f * (direction.x * normal.x + direction.y * normal.y +
+                  direction.z * normal.z);
+
+  result.x = direction.x - dot2x * normal.x;
+  result.y = direction.y - dot2x * normal.y;
+  result.z = direction.z - dot2x * normal.z;
+
+  return result;
 }
