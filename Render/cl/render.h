@@ -35,10 +35,25 @@ struct s_ray {
   struct s_vector_3 direction;
 };
 
+struct s_settings {
+  unsigned int seed;
+  int number_of_rays;
+  int number_of_reflections;
+  float gamma;
+};
+
+struct s_scene {
+  struct s_camera camera;
+  struct s_settings settings;
+  int number_of_triangles;
+  global struct s_triangle *triangles;
+};
+
 typedef struct s_vector_3 t_vector_3;
 typedef struct s_material t_material;
 typedef struct s_triangle t_triangle;
 typedef struct s_camera t_camera;
 typedef struct s_ray t_ray;
+typedef struct s_scene t_scene;
 
 #endif  // RENDER_H

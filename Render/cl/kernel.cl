@@ -1,36 +1,43 @@
 #include "render.h"
 
-int render_pixcel(global t_triangle *, t_camera, unsigned int *seed, int x,
-                  int y);
-t_ray get_ray(t_camera camera, int x, int y);
-t_vector_3 render_reflections(global t_triangle *, t_camera, unsigned int *seed,
-                              int x, int y);
-t_material render_one_times(global t_triangle *, int number, unsigned int *seed,
-                            t_ray *);
-float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
+int render_pixcel(t_scene *, int x, int y);
+t_vector_3 render_reflections(t_scene *, int x, int y);
+t_material render_one_times(t_scene *, t_ray *);
+
+t_ray get_ray(t_camera, int x, int y);
+
+float triangle_intersect(t_triangle, t_ray, t_vector_3 *p_point,
                          t_vector_3 *p_normal);
-int post_processing(t_vector_3 color);
-t_vector_3 get_random_unit_vecto_on_hemisphere(unsigned int *seed,
-                                               t_vector_3 normal);
-t_vector_3 reflect(t_vector_3 direction, t_vector_3 normal);
+int post_processing(t_scene *, t_vector_3 color);
+t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
+                                                t_vector_3 normal);
+t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal);
 
 kernel void render(global t_triangle *input, t_camera camera,
                    global int *output) {
   int gid;
   int y;
   int x;
-  unsigned int seed;
+  t_scene scene;
 
   gid = get_global_id(0);
   y = gid / camera.height;
   x = gid % camera.width;
-  seed = x * y;
 
-  output[y * camera.height + x] = render_pixcel(input, camera, &seed, x, y);
+  scene.camera = camera;
+
+  scene.settings.seed = x * y;
+  scene.settings.number_of_rays = 32;
+  scene.settings.number_of_reflections = 8;
+  scene.settings.gamma = 2.2f;
+
+  scene.number_of_triangles = camera.number;
+  scene.triangles = input;
+
+  output[y * camera.height + x] = render_pixcel(&scene, x, y);
 }
 
-int render_pixcel(global t_triangle *input, t_camera camera, unsigned int *seed,
-                  int x, int y) {
+int render_pixcel(t_scene *scene, int x, int y) {
   t_vector_3 color;
   t_vector_3 result;
 
@@ -38,8 +45,9 @@ int render_pixcel(global t_triangle *input, t_camera camera, unsigned int *seed,
   result.y = 0.0f;
   result.z = 0.0f;
 
-  for (int i = 0; i < 128; i += 1) {
-    color = render_reflections(input, camera, seed, x, y);
+  for (int i = 0; i < scene->settings.number_of_rays; i += 1) {
+    color = render_reflections(scene, x, y);
+
     result.x += color.x;
     result.y += color.y;
     result.z += color.z;
@@ -49,7 +57,7 @@ int render_pixcel(global t_triangle *input, t_camera camera, unsigned int *seed,
   result.y /= 512;
   result.z /= 512;
 
-  return post_processing(result);
+  return post_processing(scene, result);
 }
 
 static t_vector_3 apply_gamma_correction(t_vector_3 color, float gamma) {
@@ -60,8 +68,8 @@ static t_vector_3 apply_gamma_correction(t_vector_3 color, float gamma) {
   return color;
 }
 
-int post_processing(t_vector_3 color) {
-  color = apply_gamma_correction(color, 2.2f);
+int post_processing(t_scene *scene, t_vector_3 color) {
+  color = apply_gamma_correction(color, scene->settings.gamma);
 
   color.x = min(1.0f, max(0.0f, color.x));
   color.y = min(1.0f, max(0.0f, color.y));
@@ -74,8 +82,7 @@ int post_processing(t_vector_3 color) {
   return (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
 }
 
-t_vector_3 render_reflections(global t_triangle *input, t_camera camera,
-                              unsigned int *seed, int x, int y) {
+t_vector_3 render_reflections(t_scene *scene, int x, int y) {
   t_vector_3 color;
   t_material material;
   t_ray ray;
@@ -84,10 +91,10 @@ t_vector_3 render_reflections(global t_triangle *input, t_camera camera,
   color.y = 1.0f;
   color.z = 1.0f;
 
-  ray = get_ray(camera, x, y);
+  ray = get_ray(scene->camera, x, y);
 
-  for (int i = 0; i < 128; i += 1) {
-    material = render_one_times(input, camera.number, seed, &ray);
+  for (int i = 0; i < scene->settings.number_of_reflections; i += 1) {
+    material = render_one_times(scene, &ray);
 
     if (material.color.x < 0.0f) {
       break;
@@ -133,8 +140,7 @@ t_ray get_ray(t_camera camera, int x, int y) {
   return result;
 }
 
-t_material render_one_times(global t_triangle *input, int number,
-                            unsigned int *seed, t_ray *ray) {
+t_material render_one_times(t_scene *scene, t_ray *ray) {
   t_material material;
   t_triangle hitTriangle;
   float minTime;
@@ -146,18 +152,15 @@ t_material render_one_times(global t_triangle *input, int number,
   t_vector_3 hitNormal;
 
   minTime = -1.0f;
-  i = 0;
-  while (i < number) {
-    time = triangle_intersect(input[i], *ray, &point, &normal);
+  for (int i = 0; i < scene->number_of_triangles; i += 1) {
+    time = triangle_intersect(scene->triangles[i], *ray, &point, &normal);
 
     if (time >= 0.0f && (minTime == -1.0f || time < minTime)) {
       minTime = time;
-      hitTriangle = input[i];
+      hitTriangle = scene->triangles[i];
       hitPoint = point;
       hitNormal = normal;
     }
-
-    i += 1;
   }
 
   if (minTime < 0.0f) {
@@ -169,8 +172,8 @@ t_material render_one_times(global t_triangle *input, int number,
   ray->origin.y = hitPoint.y;
   ray->origin.z = hitPoint.z;
 
-  ray->direction = get_random_unit_vecto_on_hemisphere(seed, hitNormal);
-  // ray->direction = reflect(ray->direction, hitNormal);
+  ray->direction =
+      get_random_unit_vector_on_hemisphere(&scene->settings.seed, hitNormal);
 
   return hitTriangle.material;
 }
@@ -278,8 +281,8 @@ static float random(unsigned int *seed) {
   return 2.0f * number - 1.0f;
 }
 
-t_vector_3 get_random_unit_vecto_on_hemisphere(unsigned int *seed,
-                                               t_vector_3 normal) {
+t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
+                                                t_vector_3 normal) {
   t_vector_3 result;
   float length;
   float dot;
@@ -306,7 +309,7 @@ t_vector_3 get_random_unit_vecto_on_hemisphere(unsigned int *seed,
   return result;
 }
 
-t_vector_3 reflect(t_vector_3 direction, t_vector_3 normal) {
+t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal) {
   t_vector_3 result;
   float dot2x;
 
