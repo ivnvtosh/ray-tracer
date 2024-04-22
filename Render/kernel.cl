@@ -1,14 +1,82 @@
-#include "render.h"
+#ifndef RENDER_H
+#define RENDER_H
+
+#ifndef __OPENCL_C_VERSION__
+#include <math.h>
+#endif
+
+struct s_vector_3 {
+  float x;
+  float y;
+  float z;
+};
+
+struct s_material {
+  struct s_vector_3 color;
+  bool is_light;
+};
+
+struct s_triangle {
+  struct s_vector_3 vertices[3];
+  struct s_material material;
+};
+
+struct s_ray {
+  struct s_vector_3 origin;
+  struct s_vector_3 direction;
+};
+
+struct s_hit_info {
+  bool is_hit;
+  float time;
+  struct s_material material;
+  struct s_vector_3 point;
+  struct s_vector_3 normal;
+  struct s_ray reflected_ray;
+};
+
+struct s_camera {
+  int height;
+  int width;
+  float fov;
+  float focus;
+  struct s_vector_3 position;
+  int number;
+};
+
+struct s_settings {
+  unsigned int seed;
+  int number_of_rays;
+  int number_of_reflections;
+  float gamma;
+};
+
+struct s_scene {
+  struct s_camera camera;
+  struct s_settings settings;
+  int number_of_triangles;
+  global struct s_triangle *triangles;
+};
+
+typedef struct s_vector_3 t_vector_3;
+typedef struct s_material t_material;
+typedef struct s_triangle t_triangle;
+typedef struct s_ray t_ray;
+typedef struct s_hit_info t_hit_info;
+typedef struct s_camera t_camera;
+typedef struct s_scene t_scene;
+
+#endif  // RENDER_H
 
 int render_pixcel(t_scene *, int x, int y);
 t_vector_3 render_reflections(t_scene *, int x, int y);
-t_material render_one_times(t_scene *, t_ray *);
+t_hit_info render_one_times(t_scene *, t_ray);
 
 t_ray get_ray(t_camera, int x, int y);
-
-float triangle_intersect(t_triangle, t_ray, t_vector_3 *p_point,
-                         t_vector_3 *p_normal);
 int post_processing(t_scene *, t_vector_3 color);
+
+t_hit_info triangle_intersect(t_triangle, t_ray);
+
 t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
                                                 t_vector_3 normal);
 t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal);
@@ -53,9 +121,9 @@ int render_pixcel(t_scene *scene, int x, int y) {
     result.z += color.z;
   }
 
-  result.x /= 512;
-  result.y /= 512;
-  result.z /= 512;
+  result.x /= scene->settings.number_of_rays;
+  result.y /= scene->settings.number_of_rays;
+  result.z /= scene->settings.number_of_rays;
 
   return post_processing(scene, result);
 }
@@ -84,8 +152,8 @@ int post_processing(t_scene *scene, t_vector_3 color) {
 
 t_vector_3 render_reflections(t_scene *scene, int x, int y) {
   t_vector_3 color;
-  t_material material;
   t_ray ray;
+  t_hit_info info;
 
   color.x = 1.0f;
   color.y = 1.0f;
@@ -94,22 +162,24 @@ t_vector_3 render_reflections(t_scene *scene, int x, int y) {
   ray = get_ray(scene->camera, x, y);
 
   for (int i = 0; i < scene->settings.number_of_reflections; i += 1) {
-    material = render_one_times(scene, &ray);
+    info = render_one_times(scene, ray);
 
-    if (material.color.x < 0.0f) {
+    if (!info.is_hit) {
       break;
     }
 
-    color.x *= material.color.x;
-    color.y *= material.color.y;
-    color.z *= material.color.z;
+    color.x *= info.material.color.x;
+    color.y *= info.material.color.y;
+    color.z *= info.material.color.z;
 
-    if (material.is_light) {
+    if (info.material.is_light) {
       color.x *= 100.0f;
       color.y *= 100.0f;
       color.z *= 100.0f;
       return color;
     }
+
+    ray = info.reflected_ray;
   }
 
   color.x = 0.0f;
@@ -140,58 +210,40 @@ t_ray get_ray(t_camera camera, int x, int y) {
   return result;
 }
 
-t_material render_one_times(t_scene *scene, t_ray *ray) {
-  t_material material;
-  t_triangle hitTriangle;
-  float minTime;
-  float time;
-  int i;
-  t_vector_3 point;
-  t_vector_3 normal;
-  t_vector_3 hitPoint;
-  t_vector_3 hitNormal;
+t_hit_info render_one_times(t_scene *scene, t_ray ray) {
+  t_hit_info info;
+  t_hit_info current;
 
-  minTime = -1.0f;
+  info.is_hit = false;
+
   for (int i = 0; i < scene->number_of_triangles; i += 1) {
-    time = triangle_intersect(scene->triangles[i], *ray, &point, &normal);
+    current = triangle_intersect(scene->triangles[i], ray);
 
-    if (time >= 0.0f && (minTime == -1.0f || time < minTime)) {
-      minTime = time;
-      hitTriangle = scene->triangles[i];
-      hitPoint = point;
-      hitNormal = normal;
+    if (current.is_hit && (!info.is_hit || current.time < info.time)) {
+      info = current;
     }
   }
 
-  if (minTime < 0.0f) {
-    material.color.x = -1.0f;
-    return material;
+  if (!info.is_hit) {
+    return info;
   }
 
-  ray->origin.x = hitPoint.x;
-  ray->origin.y = hitPoint.y;
-  ray->origin.z = hitPoint.z;
+  info.reflected_ray.origin = info.point;
+  info.reflected_ray.direction =
+      get_random_unit_vector_on_hemisphere(&scene->settings.seed, info.normal);
 
-  ray->direction =
-      get_random_unit_vector_on_hemisphere(&scene->settings.seed, hitNormal);
-
-  return hitTriangle.material;
+  return info;
 }
 
-float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
-                         t_vector_3 *p_normal) {
+t_hit_info triangle_intersect(t_triangle triangle, t_ray ray) {
+  t_hit_info info;
   t_vector_3 sub_1;
   t_vector_3 sub_2;
   t_vector_3 cross;
   float length_squared;
-  t_vector_3 normal;
   float length;
-  float dot;
   float denominator;
-  float abs_denominator;
   float numerator;
-  float time;
-  t_vector_3 point;
   t_vector_3 sub_3;
   float dot00;
   float dot01;
@@ -201,6 +253,9 @@ float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
   float invDenom;
   float u;
   float v;
+
+  info.material = triangle.material;
+  info.is_hit = false;
 
   sub_1.x = triangle.vertices[1].x - triangle.vertices[0].x;
   sub_1.y = triangle.vertices[1].y - triangle.vertices[0].y;
@@ -217,45 +272,40 @@ float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
   length_squared = cross.x * cross.x + cross.y * cross.y + cross.z * cross.z;
 
   if (length_squared < 0.00001f) {
-    return -1.0f;
+    return info;
   }
 
   length = sqrt(length_squared);
 
-  normal.x = cross.x / length;
-  normal.y = cross.y / length;
-  normal.z = cross.z / length;
+  info.normal.x = cross.x / length;
+  info.normal.y = cross.y / length;
+  info.normal.z = cross.z / length;
 
-  *p_normal = normal;
+  denominator = ray.direction.x * info.normal.x +
+                ray.direction.y * info.normal.y +
+                ray.direction.z * info.normal.z;
 
-  denominator = ray.direction.x * normal.x + ray.direction.y * normal.y +
-                ray.direction.z * normal.z;
-
-  abs_denominator = denominator < 0.0f ? -denominator : denominator;
-
-  if (abs_denominator < 0.00001f) {
-    return -1.0f;
+  if ((denominator < 0.0f ? -denominator : denominator) < 0.00001f) {
+    return info;
   }
 
-  numerator = (triangle.vertices[0].x - ray.origin.x) * normal.x +
-              (triangle.vertices[0].y - ray.origin.y) * normal.y +
-              (triangle.vertices[0].z - ray.origin.z) * normal.z;
+  numerator = (triangle.vertices[0].x - ray.origin.x) * info.normal.x +
+              (triangle.vertices[0].y - ray.origin.y) * info.normal.y +
+              (triangle.vertices[0].z - ray.origin.z) * info.normal.z;
 
-  time = numerator / denominator;
+  info.time = numerator / denominator;
 
-  if (time < 0.0f) {
-    return -1.0f;
+  if (info.time < 0.0f) {
+    return info;
   }
 
-  point.x = ray.origin.x + (time - 0.00001f) * ray.direction.x;
-  point.y = ray.origin.y + (time - 0.00001f) * ray.direction.y;
-  point.z = ray.origin.z + (time - 0.00001f) * ray.direction.z;
+  info.point.x = ray.origin.x + (info.time - 0.00001f) * ray.direction.x;
+  info.point.y = ray.origin.y + (info.time - 0.00001f) * ray.direction.y;
+  info.point.z = ray.origin.z + (info.time - 0.00001f) * ray.direction.z;
 
-  *p_point = point;
-
-  sub_3.x = point.x - triangle.vertices[0].x;
-  sub_3.y = point.y - triangle.vertices[0].y;
-  sub_3.z = point.z - triangle.vertices[0].z;
+  sub_3.x = info.point.x - triangle.vertices[0].x;
+  sub_3.y = info.point.y - triangle.vertices[0].y;
+  sub_3.z = info.point.z - triangle.vertices[0].z;
 
   dot00 = sub_1.x * sub_1.x + sub_1.y * sub_1.y + sub_1.z * sub_1.z;
   dot01 = sub_1.x * sub_2.x + sub_1.y * sub_2.y + sub_1.z * sub_2.z;
@@ -267,16 +317,14 @@ float triangle_intersect(t_triangle triangle, t_ray ray, t_vector_3 *p_point,
   u = (dot11 * dot02 - dot01 * dot12) * invDenom;
   v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
-  if ((u >= 0.0f) && (v >= 0.0f) && (u + v <= 1.0f)) {
-    return time;
-  } else {
-    return -1.0f;
-  }
+  info.is_hit = (u >= 0.0f) && (v >= 0.0f) && (u + v <= 1.0f);
+
+  return info;
 }
 
 static float random(unsigned int *seed) {
   float number;
-  *seed = 1664525u * *seed + (unsigned int)seed;
+  *seed = 1664525u * *seed;
   number = convert_float((*seed & 0x7FFFFFFF) / (float)0x7FFFFFFF);
   return 2.0f * number - 1.0f;
 }

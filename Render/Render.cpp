@@ -97,7 +97,7 @@ void Engine::Render::CreateKernel() {
 
   auto program = CreateProgram();
 
-  err = clBuildProgram(program, 1, &device, "-I ../render/cl", NULL, NULL);
+  err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
   if (err != 0) {
     char *log;
     size_t size;
@@ -151,7 +151,7 @@ cl_program Engine::Render::CreateProgram() {
 
 void Engine::Render::ReadFilesToBuffer(char **program_buf,
                                        size_t *program_size) {
-  program_buf[0] = ReadFileToBuffer("../Render/cl/kernel.cl", &program_size[3]);
+  program_buf[0] = ReadFileToBuffer("../Render/kernel.cl", &program_size[3]);
 }
 
 char *Engine::Render::ReadFileToBuffer(const char *name, size_t *program_size) {
