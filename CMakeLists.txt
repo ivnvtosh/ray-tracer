@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_definitions("-Wall -Wextra -Werror -std=c++17")
+# add_definitions("-Wall -Wextra -Werror -std=c++17")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
@@ -15,9 +15,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
+find_package(OpenGL REQUIRED)
 find_package(OpenCL REQUIRED)
 
 include_directories(
+  ${OPENGL_INCLUDE_DIRS} 
   ${OPENCL_INCLUDE_DIR}
   Engine
   Logger
@@ -34,6 +36,11 @@ add_executable(ray-tracer
   PPMExporter/PPMExporter.cpp
   Render/Render.cpp
   Scene/Scene.cpp
+  render.m
 )
 
-target_link_libraries(ray-tracer ${OpenCL_LIBRARIES})
+target_link_libraries(ray-tracer
+  ${OPENGL_LIBRARIES}
+  ${OpenCL_LIBRARIES}
+  "-framework Cocoa"
+)

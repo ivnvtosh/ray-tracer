@@ -1,26 +1,29 @@
-#include "Logger.hpp"
-#include "Scene.hpp"
+// #include "Logger.hpp"
+// #include "Scene.hpp"
+
+extern "C" void render();
 
 int main(void) {
-  auto logger = Logger();
-  auto scene = Scene();
+  // auto logger = Logger();
+  // auto scene = Scene();
 
-  logger.TimeStartImport();
-  scene.Import();
-  logger.TimeEndImport();
-  logger.LogTimeDurationImport();
+  // logger.TimeStartImport();
+  // scene.Import();
+  // logger.TimeEndImport();
+  // logger.LogTimeDurationImport();
 
-  scene.render.Setup();
-  
-  logger.TimeStartRender();
-  scene.Render();
-  logger.TimeEndRender();
-  logger.LogTimeDurationRender();
+  // scene.render.Setup();
 
-  logger.TimeStartExport();
-  scene.Export();
-  logger.TimeEndExport();
-  logger.LogTimeDurationExport();
+  // logger.TimeStartRender();
+  // scene.Render();
+  // logger.TimeEndRender();
+  // logger.LogTimeDurationRender();
 
+  // logger.TimeStartExport();
+  // scene.Export();
+  // logger.TimeEndExport();
+  // logger.LogTimeDurationExport();
+
+  render();
   return 0;
 }
