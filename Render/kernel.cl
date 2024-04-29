@@ -42,6 +42,7 @@ struct s_camera {
   float focus;
   struct s_vector_3 position;
   int number;
+  unsigned int seed;
 };
 
 struct s_settings {
@@ -94,15 +95,22 @@ kernel void render(global t_triangle *input, t_camera camera,
 
   scene.camera = camera;
 
-  scene.settings.seed = x * y;
-  scene.settings.number_of_rays = 32;
+  scene.settings.seed = x * y * camera.seed;
+  scene.settings.number_of_rays = 128;
   scene.settings.number_of_reflections = 8;
   scene.settings.gamma = 2.2f;
 
   scene.number_of_triangles = camera.number;
   scene.triangles = input;
 
-  output[y * camera.height + x] = render_pixcel(&scene, x, y);
+  int one = output[y * camera.height + x];
+  int two = render_pixcel(&scene, x, y);
+
+  int r = ((one >> 16 & 0xFF) + (two >> 16 & 0xFF)) / 2;
+  int g = ((one >> 8 & 0xFF) + (two >> 8 & 0xFF)) / 2;
+  int b = ((one & 0xFF) + (two & 0xFF)) / 2;
+
+  output[y * camera.height + x] = 0 << 24 | r << 16 | g << 8 | b;
 }
 
 int render_pixcel(t_scene *scene, int x, int y) {
@@ -147,7 +155,7 @@ int post_processing(t_scene *scene, t_vector_3 color) {
   color.y *= 255;
   color.z *= 255;
 
-  return (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
+  return 0 << 24 | (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
 }
 
 t_vector_3 render_reflections(t_scene *scene, int x, int y) {

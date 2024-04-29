@@ -11,7 +11,7 @@ class Scene {
   Engine::TriangleMesh mesh;
 
   int* data;
-
+  
   Scene();
   ~Scene();
 

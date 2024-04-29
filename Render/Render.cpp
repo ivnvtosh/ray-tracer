@@ -25,6 +25,7 @@ struct s_camera {
   float focus;
   struct s_vector_3 position;
   int number;
+  unsigned int seed;
 };
 
 struct s_ray {
@@ -43,6 +44,23 @@ void Engine::Render::Setup() {
 
 void Engine::Render::Rendering(int *data) {
   int err;
+
+  struct s_camera c_camera;
+
+  c_camera.height = camera.height;
+  c_camera.width = camera.width;
+  c_camera.fov = camera.fov;
+  c_camera.focus = camera.focus;
+  c_camera.position.x = camera.position.x;
+  c_camera.position.y = camera.position.y;
+  c_camera.position.z = camera.position.z;
+  c_camera.number = mesh.size();
+  c_camera.seed = rand();
+  
+  err = clSetKernelArg(kernel, 1, sizeof(struct s_camera), &c_camera);
+  if (err != 0) {
+    throw;
+  }
 
   size_t items = camera.height * camera.width;
 
@@ -237,6 +255,7 @@ void Engine::Render::SetArgument() {
   c_camera.position.y = camera.position.y;
   c_camera.position.z = camera.position.z;
   c_camera.number = mesh.size();
+  c_camera.seed = rand();
 
   err = clSetKernelArg(kernel, 1, sizeof(struct s_camera), &c_camera);
   if (err != 0) {
