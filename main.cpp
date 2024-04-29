@@ -1,36 +1,14 @@
-#include "Logger.hpp"
-#include "Scene.hpp"
-
-extern "C" void render(int *data, int (*funct)());
-extern "C" void loop();
-
-auto logger = Logger();
-auto scene = Scene();
-
-int update() {
-  scene.Render();
-  return 0;
-}
+#include "Application.hpp"
 
 int main(void) {
-  logger.TimeStartImport();
-  scene.Import();
-  logger.TimeEndImport();
-  logger.LogTimeDurationImport();
+  auto application = Application();
 
-  scene.render.Setup();
+  auto height = 512;
+  auto width = 512;
+  auto title = "Ray Tracer";
+  application.CreateWindow(height, width, title);
 
-  logger.TimeStartRender();
-  scene.Render();
-  logger.TimeEndRender();
-  logger.LogTimeDurationRender();
-
-  logger.TimeStartExport();
-  scene.Export();
-  logger.TimeEndExport();
-  logger.LogTimeDurationExport();
-
-  render(scene.data, update);
-
+  application.Loop();
+  
   return 0;
 }

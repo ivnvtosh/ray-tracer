@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-Scene::Scene() {
+Scene::Scene(int* data) : data(data) {
   auto height = 512;
   auto width = 512;
   auto fov = 45.0f;
@@ -12,8 +12,6 @@ Scene::Scene() {
   render.camera.position.x = -0.01f;
   render.camera.position.y = 0.99f;
   render.camera.position.z = 3.39f;
-
-  data = (int*)malloc(height * width * sizeof(int));
 }
 
 Scene::~Scene() { free(data); }

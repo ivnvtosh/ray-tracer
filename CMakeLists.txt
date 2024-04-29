@@ -21,7 +21,10 @@ find_package(OpenCL REQUIRED)
 include_directories(
   ${OPENGL_INCLUDE_DIRS} 
   ${OPENCL_INCLUDE_DIR}
+  Application
+  ApplicationMacOS
   Engine
+  Engine/Shader
   Logger
   OBJImporter
   PPMExporter
@@ -31,12 +34,14 @@ include_directories(
 
 add_executable(ray-tracer
   main.cpp
+  Application/Application.cpp
+  ApplicationMacOS/ApplicationMacOS.m
+  Engine/Shader/Shader.cpp
   Logger/Logger.cpp
   OBJImporter/OBJImporter.cpp
   PPMExporter/PPMExporter.cpp
   Render/Render.cpp
   Scene/Scene.cpp
-  render.m
 )
 
 target_link_libraries(ray-tracer

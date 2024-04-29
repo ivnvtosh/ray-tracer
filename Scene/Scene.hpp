@@ -11,8 +11,8 @@ class Scene {
   Engine::TriangleMesh mesh;
 
   int* data;
-  
-  Scene();
+
+  Scene(int* data);
   ~Scene();
 
   void Import();
