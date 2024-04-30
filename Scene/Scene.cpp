@@ -1,38 +1,27 @@
 #include "Scene.hpp"
 
-Scene::Scene(int* data) : data(data) {
+void Scene::Setup() {
   auto height = 512;
   auto width = 512;
-  auto fov = 45.0f;
 
-  render.camera.height = height;
-  render.camera.width = width;
-  render.camera.fov = fov;
-  render.camera.focus = height / 2 / std::tanf(fov / 2.0f * M_PI / 180.0f);
-  render.camera.position.x = -0.01f;
-  render.camera.position.y = 0.99f;
-  render.camera.position.z = 3.39f;
-}
+  shader = Engine::Shader(height, width);
 
-Scene::~Scene() { free(data); }
-
-void Scene::Import() {
   auto request = Engine::OBJRequest()
                      .Filepath("../cornell-box-original/")
                      .Filename("cornell-box-original");
 
-  render.mesh = Engine::OBJImporter().Import(request);
+  auto mesh = Engine::OBJImporter().Import(request);
+
+  shader.LoadMesh(mesh);
+
+  shader.camera.height = height;
+  shader.camera.width = width;
+  shader.camera.fov = 45.0f;
+  shader.camera.focus =
+      height / 2 / std::tanf(shader.camera.fov / 2.0f * M_PI / 180.0f);
+  shader.camera.position.x = -0.01f;
+  shader.camera.position.y = 0.99f;
+  shader.camera.position.z = 3.39f;
 }
 
-void Scene::Render() { render.Rendering(data); }
-
-void Scene::Export() {
-  auto request = Engine::PPMRequest()
-                     .Filepath("../../")
-                     .Filename("image")
-                     .Height(render.camera.height)
-                     .Width(render.camera.width)
-                     .Data(data);
-
-  Engine::PPMExporter().Export(request);
-}
+void Scene::Update() { shader.Update(); }

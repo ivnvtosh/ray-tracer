@@ -1,86 +1,4 @@
-#ifndef RENDER_H
-#define RENDER_H
-
-#ifndef __OPENCL_C_VERSION__
-#include <math.h>
-#endif
-
-struct s_vector_3 {
-  float x;
-  float y;
-  float z;
-};
-
-struct s_material {
-  struct s_vector_3 color;
-  bool is_light;
-};
-
-struct s_triangle {
-  struct s_vector_3 vertices[3];
-  struct s_material material;
-};
-
-struct s_ray {
-  struct s_vector_3 origin;
-  struct s_vector_3 direction;
-};
-
-struct s_hit_info {
-  bool is_hit;
-  float time;
-  struct s_material material;
-  struct s_vector_3 point;
-  struct s_vector_3 normal;
-  struct s_ray reflected_ray;
-};
-
-struct s_camera {
-  int height;
-  int width;
-  float fov;
-  float focus;
-  struct s_vector_3 position;
-  int number;
-  unsigned int seed;
-};
-
-struct s_settings {
-  unsigned int seed;
-  int number_of_rays;
-  int number_of_reflections;
-  float gamma;
-};
-
-struct s_scene {
-  struct s_camera camera;
-  struct s_settings settings;
-  int number_of_triangles;
-  global struct s_triangle *triangles;
-};
-
-typedef struct s_vector_3 t_vector_3;
-typedef struct s_material t_material;
-typedef struct s_triangle t_triangle;
-typedef struct s_ray t_ray;
-typedef struct s_hit_info t_hit_info;
-typedef struct s_camera t_camera;
-typedef struct s_scene t_scene;
-
-#endif  // RENDER_H
-
-int render_pixcel(t_scene *, int x, int y);
-t_vector_3 render_reflections(t_scene *, int x, int y);
-t_hit_info render_one_times(t_scene *, t_ray);
-
-t_ray get_ray(t_camera, int x, int y);
-int post_processing(t_scene *, t_vector_3 color);
-
-t_hit_info triangle_intersect(t_triangle, t_ray);
-
-t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
-                                                t_vector_3 normal);
-t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal);
+#include "kernel.h"
 
 kernel void render(global t_triangle *input, t_camera camera,
                    global int *output) {
@@ -103,14 +21,15 @@ kernel void render(global t_triangle *input, t_camera camera,
   scene.number_of_triangles = camera.number;
   scene.triangles = input;
 
-  int one = output[y * camera.height + x];
+  // int one = output[y * camera.height + x];
   int two = render_pixcel(&scene, x, y);
 
-  int r = ((one >> 16 & 0xFF) + (two >> 16 & 0xFF)) / 2;
-  int g = ((one >> 8 & 0xFF) + (two >> 8 & 0xFF)) / 2;
-  int b = ((one & 0xFF) + (two & 0xFF)) / 2;
+  // int r = ((one >> 16 & 0xFF) + (two >> 16 & 0xFF)) / 2;
+  // int g = ((one >> 8 & 0xFF) + (two >> 8 & 0xFF)) / 2;
+  // int b = ((one & 0xFF) + (two & 0xFF)) / 2;
 
-  output[y * camera.height + x] = 0 << 24 | r << 16 | g << 8 | b;
+  // output[y * camera.height + x] = 0 << 24 | r << 16 | g << 8 | b;
+  output[y * camera.height + x] = two;
 }
 
 int render_pixcel(t_scene *scene, int x, int y) {

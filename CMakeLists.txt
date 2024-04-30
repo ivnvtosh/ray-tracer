@@ -35,7 +35,6 @@ add_executable(ray-tracer
   Engine/Source/Logger.cpp
   Engine/Source/OBJImporter.cpp
   Engine/Source/PPMExporter.cpp
-  Engine/Source/Render.cpp
   Scene/Scene.cpp
 )
 

@@ -3,21 +3,17 @@
 
 #include "OBJImporter.hpp"
 #include "PPMExporter.hpp"
-#include "Render.hpp"
+#include "Shader.hpp"
 
 class Scene {
  public:
-  Engine::Render render;
-  Engine::TriangleMesh mesh;
+  Scene() = default;
 
-  int* data;
+  void Setup();
+  void Update();
 
-  Scene(int* data);
-  ~Scene();
-
-  void Import();
-  void Render();
-  void Export();
+ private:
+  Engine::Shader shader;
 };
 
 #endif  // SCENE_HPP

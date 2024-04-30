@@ -1,7 +1,7 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
-#include "Shader.hpp"
+#include "Scene.hpp"
 
 struct s_app {
   void *application;
@@ -17,14 +17,14 @@ typedef struct s_app t_app;
 class Application {
  public:
   Application();
+
   void CreateWindow(int height, int width, const char *title);
+  void CreateScene();
   void Loop();
-  void Update();
 
  private:
   t_app app;
-  Engine::Shader shader;
-  int *data;
+  Scene scene;
 };
 
 #endif  // APPLICATION_HPP

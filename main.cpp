@@ -8,7 +8,9 @@ int main(void) {
   auto title = "Ray Tracer";
   application.CreateWindow(height, width, title);
 
+  application.CreateScene();
+
   application.Loop();
-  
+
   return 0;
 }
