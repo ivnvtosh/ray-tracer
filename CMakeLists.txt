@@ -23,12 +23,7 @@ include_directories(
   ${OPENCL_INCLUDE_DIR}
   Application
   ApplicationMacOS
-  Engine
-  Engine/Shader
-  Logger
-  OBJImporter
-  PPMExporter
-  Render
+  Engine/Include
   Scene
 )
 
@@ -36,11 +31,11 @@ add_executable(ray-tracer
   main.cpp
   Application/Application.cpp
   ApplicationMacOS/ApplicationMacOS.m
-  Engine/Shader/Shader.cpp
-  Logger/Logger.cpp
-  OBJImporter/OBJImporter.cpp
-  PPMExporter/PPMExporter.cpp
-  Render/Render.cpp
+  Engine/Source/Shader.cpp
+  Engine/Source/Logger.cpp
+  Engine/Source/OBJImporter.cpp
+  Engine/Source/PPMExporter.cpp
+  Engine/Source/Render.cpp
   Scene/Scene.cpp
 )
 
