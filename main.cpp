@@ -6,10 +6,9 @@ int main(void) {
   auto height = 512;
   auto width = 512;
   auto title = "Ray Tracer";
+  
   application.CreateWindow(height, width, title);
-
   application.CreateScene();
-
   application.Loop();
 
   return 0;

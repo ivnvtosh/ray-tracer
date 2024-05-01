@@ -8,28 +8,20 @@ kernel void render(global t_triangle *input, t_camera camera,
   t_scene scene;
 
   gid = get_global_id(0);
-  y = gid / camera.height;
-  x = gid % camera.width;
+  y = gid / camera.oy + camera.y;
+  x = gid % camera.ox + camera.x;
 
   scene.camera = camera;
 
   scene.settings.seed = x * y * camera.seed;
-  scene.settings.number_of_rays = 128;
-  scene.settings.number_of_reflections = 8;
+  scene.settings.number_of_rays = 256;
+  scene.settings.number_of_reflections = 64;
   scene.settings.gamma = 2.2f;
 
   scene.number_of_triangles = camera.number;
   scene.triangles = input;
 
-  // int one = output[y * camera.height + x];
-  int two = render_pixcel(&scene, x, y);
-
-  // int r = ((one >> 16 & 0xFF) + (two >> 16 & 0xFF)) / 2;
-  // int g = ((one >> 8 & 0xFF) + (two >> 8 & 0xFF)) / 2;
-  // int b = ((one & 0xFF) + (two & 0xFF)) / 2;
-
-  // output[y * camera.height + x] = 0 << 24 | r << 16 | g << 8 | b;
-  output[y * camera.height + x] = two;
+  output[y * camera.height + x] = render_pixcel(&scene, x, y);
 }
 
 int render_pixcel(t_scene *scene, int x, int y) {

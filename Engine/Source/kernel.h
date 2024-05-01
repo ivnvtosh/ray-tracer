@@ -53,5 +53,4 @@ t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
                                                 t_vector_3 normal);
 t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal);
 
-
 #endif  // KERNEL_H

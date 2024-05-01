@@ -22,12 +22,15 @@ struct Camera {
 class Shader {
  public:
   Camera camera;
+  int *data;
 
   Shader() = default;
-  Shader(int width, int height);
+  Shader(int height, int width);
   ~Shader();
 
   void Update();
+  void UpdateShader() const noexcept;
+  void UpdateState(int x, int y, int ox, int oy) const;
 
   void LoadMesh(TriangleMesh);
 
@@ -36,7 +39,6 @@ class Shader {
 
   int width;
   int height;
-  int *data;
 
   GLuint program;
   GLuint texture;
@@ -53,7 +55,6 @@ class Shader {
   GLuint CreateVertexShader() const;
   GLuint CreateFragmentShader() const;
   void UseProgram() noexcept;
-  void UpdateShader() const noexcept;
 
   cl_platform_id platform;
   cl_device_id device;
@@ -73,8 +74,6 @@ class Shader {
   char *ReadFileToBuffer(const char *name, size_t *program_size);
   void LoadMem();
   void SetArgument();
-
-  void UpdateState() const;
 };
 
 };  // namespace Engine

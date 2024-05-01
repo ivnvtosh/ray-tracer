@@ -25,6 +25,8 @@ class Application {
  private:
   t_app app;
   Scene scene;
+
+  void WillCreateScene();
 };
 
 #endif  // APPLICATION_HPP

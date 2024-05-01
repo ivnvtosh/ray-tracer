@@ -6,14 +6,14 @@
 
 #include "kernel_shared.h"
 
-Engine::Shader::Shader(int width, int height)
+Engine::Shader::Shader(int height, int width)
     : width(width), height(height), data(new int[height * width]) {
   CreateTexture();
   CreateShaderProgram();
   UseProgram();
 
-  camera.height = 512;
-  camera.width = 512;
+  camera.height = height;
+  camera.width = width;
 
   GetDeviceId();
   CreateContext();
@@ -26,7 +26,7 @@ Engine::Shader::Shader(int width, int height)
 Engine::Shader::~Shader() { delete[] data; }
 
 void Engine::Shader::Update() {
-  UpdateState();
+  UpdateState(0, 0, width, height);
   UpdateShader();
 }
 
@@ -305,18 +305,13 @@ void Engine::Shader::LoadMem() {
 void Engine::Shader::SetArgument() {
   int err;
 
-  // err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-  // if (err != 0) {
-  //   throw;
-  // }
-
   err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
   if (err != 0) {
     throw;
   }
 }
 
-void Engine::Shader::UpdateState() const {
+void Engine::Shader::UpdateState(int x, int y, int ox, int oy) const {
   int err;
 
   struct s_camera c_camera;
@@ -330,13 +325,17 @@ void Engine::Shader::UpdateState() const {
   c_camera.position.z = camera.position.z;
   c_camera.number = mesh.size();
   c_camera.seed = rand();
+  c_camera.x = x;
+  c_camera.y = y;
+  c_camera.ox = ox;
+  c_camera.oy = oy;
 
   err = clSetKernelArg(kernel, 1, sizeof(struct s_camera), &c_camera);
   if (err != 0) {
     throw;
   }
 
-  size_t items = camera.height * camera.width;
+  size_t items = ox * oy;
 
   err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &items, NULL, 0, NULL,
                                NULL);

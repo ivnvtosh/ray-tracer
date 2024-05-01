@@ -25,6 +25,10 @@ struct s_camera {
   struct s_vector_3 position;
   int number;
   unsigned int seed;
+  int x;
+  int y;
+  int ox;
+  int oy;
 };
 
 typedef struct s_vector_3 t_vector_3;
