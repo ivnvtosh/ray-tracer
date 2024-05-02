@@ -23,7 +23,7 @@ void Scene::Setup(int height, int width) {
   shader.camera.position.z = 3.39f;
 }
 
-void Scene::Update() {
+void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
   auto block = 64;
 
   auto m = shader.camera.height / block;
@@ -36,6 +36,8 @@ void Scene::Update() {
   int x;
   int y;
 
+  auto count = 0;
+
   while (top >= 0 && bottom < m && left >= 0 && right < n) {
     for (auto i = left; i < right; i += 1) {
       timeStart = std::chrono::high_resolution_clock::now();
@@ -46,6 +48,8 @@ void Scene::Update() {
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
       LogTimeDuration();
+      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      count += 1;
     }
 
     for (auto i = top; i < bottom; i += 1) {
@@ -57,6 +61,8 @@ void Scene::Update() {
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
       LogTimeDuration();
+      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      count += 1;
     }
 
     right++;
@@ -70,6 +76,8 @@ void Scene::Update() {
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
       LogTimeDuration();
+      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      count += 1;
     }
 
     bottom++;
@@ -83,6 +91,8 @@ void Scene::Update() {
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
       LogTimeDuration();
+      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      count += 1;
     }
 
     left--;

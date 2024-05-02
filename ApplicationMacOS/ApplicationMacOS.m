@@ -1,5 +1,7 @@
 #import "ApplicationMacOS.h"
 
+#import <AppKit/AppKit.h>
+
 NSWindow* createWindow(int height, int width, const char *title);
 OpenGLView* createView(int height, int width);
 
@@ -7,6 +9,8 @@ struct s_app {
   void *application;
   void *window;
   void *view;
+  void *win;
+  void *progressIndicator;
 
   int width;
   int height;
@@ -48,7 +52,10 @@ t_app createApplication(int height, int width, const char *title) {
 NSWindow* createWindow(int height, int width, const char *title) {
   NSRect frame = NSMakeRect(0, 0, width, height);
   
-  NSUInteger windowStyle = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
+  
+  NSUInteger windowStyle = NSWindowStyleMaskTitled 
+    | NSWindowStyleMaskClosable 
+    | NSWindowStyleMaskMiniaturizable;
 
   NSWindow* window = [[NSWindow alloc] initWithContentRect:frame
                        		             styleMask:windowStyle
@@ -101,4 +108,56 @@ void select_glContext(t_app* app)
 void loop(t_app* app)
 {
   [NSApp run];
+}
+
+NSWindow* createAnotherWindow(t_app *app, int height, int width, const char *title) {
+  NSScreen *mainScreen = [NSScreen mainScreen];
+  NSRect screenFrame = [mainScreen frame];
+  CGFloat x = screenFrame.size.width / 2 - width / 2;
+  CGFloat y = screenFrame.size.height / 2 - height / 2;
+
+  NSRect frame = NSMakeRect(x, y, width, height);
+  
+  NSUInteger windowStyle = NSWindowStyleMaskTitled | NSWindowStyleMaskMiniaturizable;
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:frame
+                       		             styleMask:windowStyle
+                                   	   backing:NSBackingStoreBuffered
+                                  	   defer:NO];
+window.titlebarAppearsTransparent = true;
+  NSProgressIndicator *progressIndicator = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(32, 0, width - 64, height)];
+  [progressIndicator setStyle:NSProgressIndicatorBarStyle];
+  [progressIndicator setControlSize:NSControlSizeRegular];
+  
+	[progressIndicator setIndeterminate:NO];
+
+  [progressIndicator setMaxValue:100];
+	[progressIndicator setDoubleValue:0];
+
+  [[window contentView] addSubview:progressIndicator];
+  app->progressIndicator = progressIndicator;
+  app->win = window;
+
+  [progressIndicator startAnimation:nil];
+
+  [window makeKeyAndOrderFront:nil];
+  [window orderFront:nil];
+  [window orderFrontRegardless];
+
+  NSButton *closeButton = [[NSButton alloc] initWithFrame:NSMakeRect(width - 24, 15, 16, 16)];
+ [closeButton setButtonType:NSMomentaryLightButton];
+    [closeButton setBezelStyle:NSRoundedBezelStyle]; 
+
+  NSImage *crossImage = [NSImage imageNamed:NSImageNameStopProgressFreestandingTemplate];
+  [closeButton setImage:crossImage];
+  [[window contentView] addSubview:closeButton];
+
+
+  return window;
+}
+
+void progressIndicator(t_app app, double value) {
+dispatch_async(dispatch_get_main_queue(), ^{
+  [(id)app.progressIndicator setDoubleValue:value];
+});
 }

@@ -7,6 +7,8 @@ struct s_app {
   void *application;
   void *window;
   void *view;
+  void *win;
+  void *progressIndicator;
 
   int width;
   int height;

@@ -2,6 +2,7 @@
 #define SCENE_HPP
 
 #include <chrono>
+#include <functional>
 
 #include "OBJImporter.hpp"
 #include "PPMExporter.hpp"
@@ -12,7 +13,7 @@ class Scene {
   Scene() = default;
 
   void Setup(int height, int width);
-  void Update();
+  void Update(std::function<void(double)>);
 
  private:
   Engine::Shader shader;
