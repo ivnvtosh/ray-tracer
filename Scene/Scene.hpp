@@ -13,7 +13,7 @@ class Scene {
   Scene() = default;
 
   void Setup(int height, int width);
-  void Update(std::function<void(double)>);
+  void Update(std::function<void(double)>, std::function<void(char*)>);
 
  private:
   Engine::Shader shader;
@@ -21,8 +21,8 @@ class Scene {
   using TimePoint = std::chrono::high_resolution_clock::time_point;
   TimePoint timeStart;
   TimePoint timeEnd;
-
-  void LogTimeDuration();
+  std::vector<std::chrono::duration<double, std::milli>> durations;
+  std::string LogTimeDuration(int);
 };
 
 #endif  // SCENE_HPP

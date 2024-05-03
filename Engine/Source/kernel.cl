@@ -14,8 +14,8 @@ kernel void render(global t_triangle *input, t_camera camera,
   scene.camera = camera;
 
   scene.settings.seed = x * y * camera.seed;
-  scene.settings.number_of_rays = 256;
-  scene.settings.number_of_reflections = 64;
+  scene.settings.number_of_rays = 1024 * 4;
+  scene.settings.number_of_reflections = 256;
   scene.settings.gamma = 2.2f;
 
   scene.number_of_triangles = camera.number;

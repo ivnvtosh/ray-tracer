@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 
 #include <iostream>
+#include <sstream>
 
 void Scene::Setup(int height, int width) {
   shader = Engine::Shader(height, width);
@@ -23,7 +24,8 @@ void Scene::Setup(int height, int width) {
   shader.camera.position.z = 3.39f;
 }
 
-void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
+void Scene::Update(std::function<void(double)> progressIndicatorUpdate,
+                   std::function<void(char*)> timer) {
   auto block = 64;
 
   auto m = shader.camera.height / block;
@@ -36,7 +38,7 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
   int x;
   int y;
 
-  auto count = 0;
+  auto count = 1;
 
   while (top >= 0 && bottom < m && left >= 0 && right < n) {
     for (auto i = left; i < right; i += 1) {
@@ -47,8 +49,9 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
       shader.UpdateShader();
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
-      LogTimeDuration();
-      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      auto string = LogTimeDuration(m * n - count);
+      progressIndicatorUpdate((float)count / (float)(m * n) * 100.0f);
+      timer((char*)string.c_str());
       count += 1;
     }
 
@@ -60,8 +63,9 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
       shader.UpdateShader();
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
-      LogTimeDuration();
-      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      auto string = LogTimeDuration(m * n - count);
+      progressIndicatorUpdate((float)count / (float)(m * n) * 100.0f);
+      timer((char*)string.c_str());
       count += 1;
     }
 
@@ -75,8 +79,9 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
       shader.UpdateShader();
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
-      LogTimeDuration();
-      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      auto string = LogTimeDuration(m * n - count);
+      progressIndicatorUpdate((float)count / (float)(m * n) * 100.0f);
+      timer((char*)string.c_str());
       count += 1;
     }
 
@@ -90,8 +95,9 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
       shader.UpdateShader();
       glFlush();
       timeEnd = std::chrono::high_resolution_clock::now();
-      LogTimeDuration();
-      progressIndicatorUpdate((float)count / ((float)m * (float)n) * 100.0f);
+      auto string = LogTimeDuration(m * n - count);
+      progressIndicatorUpdate((float)count / (float)(m * n) * 100.0f);
+      timer((char*)string.c_str());
       count += 1;
     }
 
@@ -109,10 +115,22 @@ void Scene::Update(std::function<void(double)> progressIndicatorUpdate) {
   Engine::PPMExporter().Export(request);
 }
 
-void Scene::LogTimeDuration() {
+std::string Scene::LogTimeDuration(int осталось) {
   using namespace std::chrono;
 
-  duration<double, std::milli> duration(timeEnd - timeStart);
+  duration<double, std::milli> currentDuration(timeEnd - timeStart);
+
+  currentDuration *= осталось;
+
+  durations.push_back(currentDuration);
+
+  duration<double, std::milli> duration;
+
+  for (auto current : durations) {
+    duration += current;
+  }
+
+  duration /= durations.size();
 
   auto h = duration_cast<hours>(duration);
   auto m = duration_cast<minutes>(duration - h);
@@ -123,29 +141,37 @@ void Scene::LogTimeDuration() {
 
   auto empty = true;
 
+  std::stringstream stream;
+
   if (auto hours = h.count()) {
     std::cout << hours << "h ";
+    stream << hours << "h ";
     empty = false;
   }
 
   if (auto minutes = m.count()) {
     std::cout << minutes << "m ";
+    stream << minutes << "m ";
     empty = false;
   }
 
   if (auto seconds = s.count()) {
     std::cout << seconds << "s ";
+    stream << seconds << "s ";
     empty = false;
   }
 
-  if (auto milliseconds = ms.count()) {
-    std::cout << milliseconds << "ms";
-    empty = false;
-  }
+  // if (auto milliseconds = ms.count()) {
+  //   std::cout << milliseconds << "ms";
+  //   stream << milliseconds << "ms";
+  //   empty = false;
+  // }
 
   if (empty) {
     std::cout << "0ms";
   }
 
   std::cout << std::endl;
+
+  return stream.str();
 }

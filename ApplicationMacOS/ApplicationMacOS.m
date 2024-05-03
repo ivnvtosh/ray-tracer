@@ -1,7 +1,5 @@
 #import "ApplicationMacOS.h"
 
-#import <AppKit/AppKit.h>
-
 NSWindow* createWindow(int height, int width, const char *title);
 OpenGLView* createView(int height, int width);
 
@@ -11,6 +9,7 @@ struct s_app {
   void *view;
   void *win;
   void *progressIndicator;
+  void *timer;
 
   int width;
   int height;
@@ -51,7 +50,6 @@ t_app createApplication(int height, int width, const char *title) {
 
 NSWindow* createWindow(int height, int width, const char *title) {
   NSRect frame = NSMakeRect(0, 0, width, height);
-  
   
   NSUInteger windowStyle = NSWindowStyleMaskTitled 
     | NSWindowStyleMaskClosable 
@@ -128,8 +126,6 @@ window.titlebarAppearsTransparent = true;
   NSProgressIndicator *progressIndicator = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(32, 0, width - 64, height)];
   [progressIndicator setStyle:NSProgressIndicatorBarStyle];
   [progressIndicator setControlSize:NSControlSizeRegular];
-  
-	[progressIndicator setIndeterminate:NO];
 
   [progressIndicator setMaxValue:100];
 	[progressIndicator setDoubleValue:0];
@@ -145,19 +141,52 @@ window.titlebarAppearsTransparent = true;
   [window orderFrontRegardless];
 
   NSButton *closeButton = [[NSButton alloc] initWithFrame:NSMakeRect(width - 24, 15, 16, 16)];
- [closeButton setButtonType:NSMomentaryLightButton];
-    [closeButton setBezelStyle:NSRoundedBezelStyle]; 
+  [closeButton setButtonType:NSMomentaryLightButton];
+  [closeButton setBezelStyle:NSRoundedBezelStyle]; 
 
   NSImage *crossImage = [NSImage imageNamed:NSImageNameStopProgressFreestandingTemplate];
   [closeButton setImage:crossImage];
+
   [[window contentView] addSubview:closeButton];
 
+  NSTextField *textField = [[NSTextField alloc] initWithFrame:NSMakeRect(30, 24, 200, 22)];
+  [textField setStringValue:@"Calculating…"];
+  [[window contentView] addSubview:textField];
+
+  [textField setFont:[NSFont systemFontOfSize:12]];
+
+  textField.bezeled = NO;
+  textField.editable = NO;
+  textField.drawsBackground = NO;
+
+  NSTextField *timer = [[NSTextField alloc] initWithFrame:NSMakeRect(30, -4, 200, 22)];
+
+  [[window contentView] addSubview:timer];
+
+  [timer setFont:[NSFont systemFontOfSize:11]];
+
+  timer.bezeled = NO;
+  timer.editable = NO;
+  timer.drawsBackground = NO;
+
+  timer.textColor = [NSColor grayColor];
+  app->timer = timer;
 
   return window;
 }
 
 void progressIndicator(t_app app, double value) {
-dispatch_async(dispatch_get_main_queue(), ^{
-  [(id)app.progressIndicator setDoubleValue:value];
-});
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [(id)app.progressIndicator setIndeterminate:NO];
+    [(id)app.progressIndicator setDoubleValue:value];
+  });
+}
+
+void timer(t_app app, char *str) {
+
+  NSString* string = [NSString stringWithCString:str encoding:NSASCIIStringEncoding];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [(id)app.timer setStringValue:string];
+  });
 }

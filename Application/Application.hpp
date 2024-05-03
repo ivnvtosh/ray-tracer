@@ -9,7 +9,8 @@ struct s_app {
   void *view;
   void *win;
   void *progressIndicator;
-
+  void *timer;
+  
   int width;
   int height;
 };
