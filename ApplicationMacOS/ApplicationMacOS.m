@@ -10,6 +10,8 @@ struct s_app {
   void *win;
   void *progressIndicator;
   void *timer;
+  
+  void *windowSettings;
 
   int width;
   int height;
@@ -189,4 +191,48 @@ void timer(t_app app, char *str) {
   dispatch_async(dispatch_get_main_queue(), ^{
     [(id)app.timer setStringValue:string];
   });
+}
+
+void createWindowSettings(t_app* app) {
+  NSScreen *mainScreen = [NSScreen mainScreen];
+  NSRect screenFrame = [mainScreen frame];
+  CGFloat x = screenFrame.size.width / 2 - 256 / 2 + 256 ;
+  CGFloat y = screenFrame.size.height / 2 - 512 / 2;
+
+  NSRect frame = NSMakeRect(x, y, 256, 512);
+  
+  NSUInteger windowStyle = NSWindowStyleMaskTitled 
+    | NSWindowStyleMaskClosable 
+    | NSWindowStyleMaskMiniaturizable;
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:frame
+                       		             styleMask:windowStyle
+                                   	   backing:NSBackingStoreBuffered
+                                  	   defer:NO];
+
+  [window setTitle:@"Settings"];
+  [window makeKeyAndOrderFront:nil];
+
+  app->windowSettings = window;
+
+  NSTextField *numberOfRaysLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(16, 100, 200, 22)];
+
+  [[window contentView] addSubview:numberOfRaysLabel];
+
+  numberOfRaysLabel.bezeled = NO;
+  numberOfRaysLabel.editable = NO;
+  numberOfRaysLabel.drawsBackground = NO;
+
+  numberOfRaysLabel.textColor = [NSColor grayColor];
+ [numberOfRaysLabel setStringValue:@"rays"];
+
+  NSTextField *numberOfRaysTextField = [[NSTextField alloc] initWithFrame:NSMakeRect(48, 100, 192, 22)];
+
+  [[window contentView] addSubview:numberOfRaysTextField];
+
+  // timer.bezeled = NO;
+  // timer.editable = NO;
+  // timer.drawsBackground = NO;
+
+  // timer.textColor = [NSColor grayColor];
 }

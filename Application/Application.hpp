@@ -11,6 +11,8 @@ struct s_app {
   void *progressIndicator;
   void *timer;
   
+  void *windowSettings;
+  
   int width;
   int height;
 };

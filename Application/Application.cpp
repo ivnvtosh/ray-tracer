@@ -9,6 +9,7 @@ void loop(t_app *app);
 void select_glContext(t_app *app);
 void progressIndicator(t_app app, double value);
 void timer(t_app app, char *str);
+void createWindowSettings(t_app *app);
 }
 
 Application::Application() {}
@@ -17,6 +18,7 @@ void Application::CreateWindow(int height, int width, const char *title) {
   app = createApplication(height, width, title);
 
   createAnotherWindow(&app, 48, 384, "Calculate");
+  createWindowSettings(&app);
 }
 
 void Application::CreateScene() {

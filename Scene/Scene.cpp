@@ -120,8 +120,6 @@ std::string Scene::LogTimeDuration(int осталось) {
 
   duration<double, std::milli> currentDuration(timeEnd - timeStart);
 
-  currentDuration *= осталось;
-
   durations.push_back(currentDuration);
 
   duration<double, std::milli> duration;
@@ -131,7 +129,8 @@ std::string Scene::LogTimeDuration(int осталось) {
   }
 
   duration /= durations.size();
-
+  duration *= осталось;
+  
   auto h = duration_cast<hours>(duration);
   auto m = duration_cast<minutes>(duration - h);
   auto s = duration_cast<seconds>(duration - h - m);
