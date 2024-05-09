@@ -7,15 +7,7 @@
 #include "OBJImporter.hpp"
 #include "PPMExporter.hpp"
 #include "Shader.hpp"
-
-namespace Engine {
-
-class Time {
- public:
-  static float deltaTime;
-};
-
-}  // namespace Engine
+#include "Time.hpp"
 
 class Scene {
  public:
@@ -39,8 +31,10 @@ class Scene {
  private:
   Engine::Shader shader;
 
-  Engine::Vector3 move;
-  Engine::Vector3 angle;
+  Engine::Vector3 cameraMoveDirection = Engine::Vector3::Zero();
+  Engine::Vector3 cameraAngle;
+  float cameraSpeed = 0.002f;
+
   Engine::Vector3 positionCursor;
 };
 

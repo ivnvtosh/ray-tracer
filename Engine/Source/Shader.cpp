@@ -6,78 +6,6 @@
 
 #include "kernel_shared.h"
 
-void matrix_column(t_col column, float a1, float a2, float a3) {
-  column[0] = a1;
-  column[1] = a2;
-  column[2] = a3;
-}
-
-void matrix_new(t_mat matrix) {
-  matrix_column(matrix[0], 1.0f, 0.0f, 0.0f);
-  matrix_column(matrix[1], 0.0f, 1.0f, 0.0f);
-  matrix_column(matrix[2], 0.0f, 0.0f, 1.0f);
-}
-
-void matrix_copy(t_mat matrix, t_mat b) {
-  matrix_column(matrix[0], b[0][0], b[0][1], b[0][2]);
-  matrix_column(matrix[1], b[1][0], b[1][1], b[1][2]);
-  matrix_column(matrix[2], b[2][0], b[2][1], b[2][2]);
-}
-
-void matrix_multiply(t_mat matrix, t_mat b) {
-  t_mat a;
-
-  matrix_copy(a, matrix);
-  matrix[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
-  matrix[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];
-  matrix[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2];
-  matrix[1][0] = a[1][0] * b[0][0] + a[1][1] * b[1][0] + a[1][2] * b[2][0];
-  matrix[1][1] = a[1][0] * b[0][1] + a[1][1] * b[1][1] + a[1][2] * b[2][1];
-  matrix[1][2] = a[1][0] * b[0][2] + a[1][1] * b[1][2] + a[1][2] * b[2][2];
-  matrix[2][0] = a[2][0] * b[0][0] + a[2][1] * b[1][0] + a[2][2] * b[2][0];
-  matrix[2][1] = a[2][0] * b[0][1] + a[2][1] * b[1][1] + a[2][2] * b[2][1];
-  matrix[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
-}
-
-void matrix_rotate_x(t_mat matrix, float angle) {
-  float a;
-  t_mat rotate;
-
-  a = M_PI / 180 * angle;
-  matrix_column(rotate[0], 1.0, 0.0, 0.0);
-  matrix_column(rotate[1], 0.0, +cosf(a), +sinf(a));
-  matrix_column(rotate[2], 0.0, -sinf(a), +cosf(a));
-  matrix_multiply(matrix, rotate);
-}
-
-void matrix_rotate_y(t_mat matrix, float angle) {
-  float a;
-  t_mat rotate;
-
-  a = M_PI / 180 * angle;
-  matrix_column(rotate[0], cosf(a), 0.0, -sinf(a));
-  matrix_column(rotate[1], 0.0, 1.0, 0.0);
-  matrix_column(rotate[2], +sinf(a), 0.0, +cosf(a));
-  matrix_multiply(matrix, rotate);
-}
-
-void matrix_rotate_z(t_mat matrix, float angle) {
-  float a;
-  t_mat rotate;
-
-  a = M_PI / 180 * angle;
-  matrix_column(rotate[0], +cosf(a), +sinf(a), 0.0);
-  matrix_column(rotate[1], -sinf(a), +cosf(a), 0.0);
-  matrix_column(rotate[2], 0.0, 0.0, 1.0);
-  matrix_multiply(matrix, rotate);
-}
-
-void matrix_rotate(t_mat matrix, Engine::Vector3 angle) {
-  matrix_rotate_z(matrix, angle.z);
-  matrix_rotate_x(matrix, angle.x);
-  matrix_rotate_y(matrix, angle.y);
-}
-
 Engine::Shader::Shader(int height, int width)
     : width(width), height(height), data(new int[height * width]) {
   CreateTexture();
@@ -390,8 +318,8 @@ void Engine::Shader::UpdateState(int x, int y, int ox, int oy) const {
 
   c_camera.height = camera.height;
   c_camera.width = camera.width;
-  c_camera.fov = camera.fov;
-  c_camera.focus = camera.focus;
+  c_camera.fov = camera.GetFov();
+  c_camera.focus = camera.GetFocus();
   c_camera.position.x = camera.position.x;
   c_camera.position.y = camera.position.y;
   c_camera.position.z = camera.position.z;

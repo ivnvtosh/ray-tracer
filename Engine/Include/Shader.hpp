@@ -6,23 +6,13 @@
 #include <OpenCL/cl.h>
 #include <OpenGL/gl3.h>
 
+#include "Camera.hpp"
 #include "TriangleMesh.hpp"
 
 typedef float t_col[3];
 typedef t_col t_mat[3];
 
 namespace Engine {
-
-struct Camera {
- public:
-  int height;
-  int width;
-  float fov;
-  float focus;
-  Vector3 position;
-  Vector3 rotation;
-  t_mat matrix;
-};
 
 class Shader {
  public:

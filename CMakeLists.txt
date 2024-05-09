@@ -32,11 +32,17 @@ add_executable(ray-tracer
   Application/Application.cpp
   ApplicationMacOS/ApplicationMacOS.mm
   ApplicationMacOS/MainWindow.mm
-  Engine/Source/Shader.cpp
+  Engine/Source/Camera.cpp
+  Engine/Source/Matrix3x3.cpp
   Engine/Source/Logger.cpp
+  Engine/Source/Matrix3x3.cpp
   Engine/Source/OBJImporter.cpp
   Engine/Source/PPMExporter.cpp
+  Engine/Source/Shader.cpp
+  Engine/Source/Time.cpp
+  Engine/Source/Vector3.cpp
   Scene/Scene.cpp
+  Scene/Scene+Event.cpp
 )
 
 target_link_libraries(ray-tracer
