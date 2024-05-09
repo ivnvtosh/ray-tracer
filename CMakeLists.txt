@@ -30,7 +30,8 @@ include_directories(
 add_executable(ray-tracer
   main.cpp
   Application/Application.cpp
-  ApplicationMacOS/ApplicationMacOS.m
+  ApplicationMacOS/ApplicationMacOS.mm
+  ApplicationMacOS/MainWindow.mm
   Engine/Source/Shader.cpp
   Engine/Source/Logger.cpp
   Engine/Source/OBJImporter.cpp

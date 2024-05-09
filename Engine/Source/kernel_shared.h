@@ -17,6 +17,9 @@ struct s_triangle {
   struct s_material material;
 };
 
+typedef float t_col[3];
+typedef t_col t_mat[3];
+
 struct s_camera {
   int height;
   int width;
@@ -29,6 +32,18 @@ struct s_camera {
   int y;
   int ox;
   int oy;
+
+  float a11;
+  float a12;
+  float a13;
+
+  float a21;
+  float a22;
+  float a23;
+
+  float a31;
+  float a32;
+  float a33;
 };
 
 typedef struct s_vector_3 t_vector_3;

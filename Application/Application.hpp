@@ -1,6 +1,7 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
+#include "Model.hpp"
 #include "Scene.hpp"
 
 struct s_app {
@@ -10,9 +11,9 @@ struct s_app {
   void *win;
   void *progressIndicator;
   void *timer;
-  
+
   void *windowSettings;
-  
+
   int width;
   int height;
 };
@@ -32,6 +33,19 @@ class Application {
   Scene scene;
 
   void WillCreateScene();
+
+  void KeyDown(Key);
+  void KeyUp(Key);
+
+  void LeftMouseDown(float x, float y);
+  void LeftMouseDragged(float x, float y);
+  void LeftMouseUp(float x, float y);
+
+  void RightMouseDown(float x, float y);
+  void RightMouseDragged(float x, float y);
+  void RightMouseUp(float x, float y);
+
+  void Update();
 };
 
 #endif  // APPLICATION_HPP

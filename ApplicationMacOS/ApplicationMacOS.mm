@@ -1,7 +1,9 @@
-#import "ApplicationMacOS.h"
+#import "ApplicationMacOS.hpp"
 
 NSWindow* createWindow(int height, int width, const char *title);
 OpenGLView* createView(int height, int width);
+
+#include <iostream>
 
 struct s_app {
   void *application;
@@ -47,6 +49,9 @@ t_app createApplication(int height, int width, const char *title) {
   app.height = height;
   app.width = width;
   
+  ProcessSerialNumber psn = { 0, kCurrentProcess };
+  TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+
   return app;
 }
 
@@ -57,7 +62,7 @@ NSWindow* createWindow(int height, int width, const char *title) {
     | NSWindowStyleMaskClosable 
     | NSWindowStyleMaskMiniaturizable;
 
-  NSWindow* window = [[NSWindow alloc] initWithContentRect:frame
+  NSWindow* window = [[MainWindow alloc] initWithContentRect:frame
                        		             styleMask:windowStyle
                                    	   backing:NSBackingStoreBuffered
                                   	   defer:NO];
@@ -235,4 +240,11 @@ void createWindowSettings(t_app* app) {
   // timer.drawsBackground = NO;
 
   // timer.textColor = [NSColor grayColor];
+}
+
+void setModel(t_app app, Model model) {
+  
+  MainWindow* window = (id)app.window;
+
+  window.model = model;
 }

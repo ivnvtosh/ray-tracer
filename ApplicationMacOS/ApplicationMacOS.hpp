@@ -6,6 +6,8 @@
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl3.h>
 
+#include "MainWindow.hpp"
+
 @interface OpenGLView : NSOpenGLView {
   int width;
   int height;

@@ -8,6 +8,9 @@
 
 #include "TriangleMesh.hpp"
 
+typedef float t_col[3];
+typedef t_col t_mat[3];
+
 namespace Engine {
 
 struct Camera {
@@ -17,6 +20,8 @@ struct Camera {
   float fov;
   float focus;
   Vector3 position;
+  Vector3 rotation;
+  t_mat matrix;
 };
 
 class Shader {

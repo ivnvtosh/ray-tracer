@@ -12,6 +12,12 @@ kernel void render(global t_triangle *input, t_camera camera,
   x = gid % camera.ox + camera.x;
 
   scene.camera = camera;
+
+  scene.settings.seed = x * y * camera.seed;
+  scene.settings.number_of_rays = 1024 * 4;
+  scene.settings.number_of_reflections = 256;
+  scene.settings.gamma = 2.2f;
+
   scene.number_of_triangles = camera.number;
   scene.triangles = input;
 
@@ -20,51 +26,38 @@ kernel void render(global t_triangle *input, t_camera camera,
 
 int render_pixcel(t_scene *scene, int x, int y) {
   t_vector_3 color;
-  t_ray ray;
-  t_hit_info info;
+  t_vector_3 result;
 
-  ray = get_ray(scene->camera, x, y);
-  info = render_one_times(scene, ray);
+  result.x = 0.0f;
+  result.y = 0.0f;
+  result.z = 0.0f;
 
-  if (!info.is_hit) {
-    color.x = 0.0f;
-    color.y = 0.0f;
-    color.z = 0.0f;
-    return post_processing(scene, color);
+  for (int i = 0; i < scene->settings.number_of_rays; i += 1) {
+    color = render_reflections(scene, x, y);
+
+    result.x += color.x;
+    result.y += color.y;
+    result.z += color.z;
   }
 
-  // ray.direction.x *= -10.0f;
-  // ray.direction.y *= -10.0f;
-  // ray.direction.z *= -10.0f;
+  result.x /= scene->settings.number_of_rays;
+  result.y /= scene->settings.number_of_rays;
+  result.z /= scene->settings.number_of_rays;
 
-  ray.origin.x = -ray.direction.x;
-  ray.origin.y = -ray.direction.y;
-  ray.origin.z = -ray.direction.z;
+  return post_processing(scene, result);
+}
 
-  // float length;
-
-  // length = sqrt(ray.origin.x * ray.origin.x + ray.origin.y * ray.origin.y +
-  //               ray.origin.z * ray.origin.z);
-
-  // ray.origin.x /= length;
-  // ray.origin.y /= length;
-  // ray.origin.z /= length;
-
-  float dot;
-
-  dot = ray.origin.x * info.normal.x + ray.origin.y * info.normal.y +
-        ray.origin.z * info.normal.z;
-
-  dot = dot < 0 ? -dot : dot;
-
-  color.x = info.material.color.x * dot;
-  color.y = info.material.color.y * dot;
-  color.z = info.material.color.z * dot;
-
-  return post_processing(scene, color);
+static t_vector_3 apply_gamma_correction(t_vector_3 color, float gamma) {
+  float inverseGamma = 1.0f / gamma;
+  color.x = pow(color.x, inverseGamma);
+  color.y = pow(color.y, inverseGamma);
+  color.z = pow(color.z, inverseGamma);
+  return color;
 }
 
 int post_processing(t_scene *scene, t_vector_3 color) {
+  color = apply_gamma_correction(color, scene->settings.gamma);
+
   color.x = min(1.0f, max(0.0f, color.x));
   color.y = min(1.0f, max(0.0f, color.y));
   color.z = min(1.0f, max(0.0f, color.z));
@@ -76,26 +69,54 @@ int post_processing(t_scene *scene, t_vector_3 color) {
   return 0 << 24 | (int)(color.x) << 16 | (int)(color.y) << 8 | (int)(color.z);
 }
 
+t_vector_3 render_reflections(t_scene *scene, int x, int y) {
+  t_vector_3 color;
+  t_ray ray;
+  t_hit_info info;
+
+  color.x = 1.0f;
+  color.y = 1.0f;
+  color.z = 1.0f;
+
+  ray = get_ray(scene->camera, x, y);
+
+  for (int i = 0; i < scene->settings.number_of_reflections; i += 1) {
+    info = render_one_times(scene, ray);
+
+    if (!info.is_hit) {
+      break;
+    }
+
+    color.x *= info.material.color.x;
+    color.y *= info.material.color.y;
+    color.z *= info.material.color.z;
+
+    if (info.material.is_light) {
+      color.x *= 100.0f;
+      color.y *= 100.0f;
+      color.z *= 100.0f;
+      return color;
+    }
+
+    ray = info.reflected_ray;
+  }
+
+  color.x = 0.0f;
+  color.y = 0.0f;
+  color.z = 0.0f;
+
+  return color;
+}
+
 t_ray get_ray(t_camera camera, int x, int y) {
   t_ray result;
   float length;
 
   result.origin = camera.position;
 
-  t_vector_3 direction;
-
-  direction.x = (camera.focus);
-  direction.y = (x - camera.width / 2.0f);
-  direction.z = (y - camera.height / 2.0f);
-
-  result.direction.x = camera.a11 * direction.x + camera.a12 * direction.y +
-                       camera.a13 * direction.z;
-
-  result.direction.y = camera.a21 * direction.x + camera.a22 * direction.y +
-                       camera.a23 * direction.z;
-
-  result.direction.z = camera.a31 * direction.x + camera.a32 * direction.y +
-                       camera.a33 * direction.z;
+  result.direction.z = -(camera.focus);
+  result.direction.y = -(y - camera.height / 2.0f);
+  result.direction.x = +(x - camera.width / 2.0f);
 
   length = sqrt(result.direction.x * result.direction.x +
                 result.direction.y * result.direction.y +
@@ -121,6 +142,14 @@ t_hit_info render_one_times(t_scene *scene, t_ray ray) {
       info = current;
     }
   }
+
+  if (!info.is_hit) {
+    return info;
+  }
+
+  info.reflected_ray.origin = info.point;
+  info.reflected_ray.direction =
+      get_random_unit_vector_on_hemisphere(&scene->settings.seed, info.normal);
 
   return info;
 }
@@ -210,4 +239,53 @@ t_hit_info triangle_intersect(t_triangle triangle, t_ray ray) {
   info.is_hit = (u >= 0.0f) && (v >= 0.0f) && (u + v <= 1.0f);
 
   return info;
+}
+
+static float random(unsigned int *seed) {
+  float number;
+  *seed = 1664525u * *seed;
+  number = convert_float((*seed & 0x7FFFFFFF) / (float)0x7FFFFFFF);
+  return 2.0f * number - 1.0f;
+}
+
+t_vector_3 get_random_unit_vector_on_hemisphere(unsigned int *seed,
+                                                t_vector_3 normal) {
+  t_vector_3 result;
+  float length;
+  float dot;
+
+  result.x = random(seed);
+  result.y = random(seed);
+  result.z = random(seed);
+
+  length =
+      sqrt(result.x * result.x + result.y * result.y + result.z * result.z);
+
+  result.x /= length;
+  result.y /= length;
+  result.z /= length;
+
+  dot = result.x * normal.x + result.y * normal.y + result.z * normal.z;
+
+  if (dot < 0) {
+    result.x = -result.x;
+    result.y = -result.y;
+    result.z = -result.z;
+  }
+
+  return result;
+}
+
+t_vector_3 get_reflected_vector(t_vector_3 direction, t_vector_3 normal) {
+  t_vector_3 result;
+  float dot2x;
+
+  dot2x = 2.0f * (direction.x * normal.x + direction.y * normal.y +
+                  direction.z * normal.z);
+
+  result.x = direction.x - dot2x * normal.x;
+  result.y = direction.y - dot2x * normal.y;
+  result.z = direction.z - dot2x * normal.z;
+
+  return result;
 }

@@ -1,28 +1,47 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
-#include <chrono>
 #include <functional>
 
+#include "Model.hpp"
 #include "OBJImporter.hpp"
 #include "PPMExporter.hpp"
 #include "Shader.hpp"
+
+namespace Engine {
+
+class Time {
+ public:
+  static float deltaTime;
+};
+
+}  // namespace Engine
 
 class Scene {
  public:
   Scene() = default;
 
   void Setup(int height, int width);
-  void Update(std::function<void(double)>, std::function<void(char*)>);
+
+  void Update();
+
+  void KeyDown(Key);
+  void KeyUp(Key);
+
+  void LeftMouseDown(float x, float y);
+  void LeftMouseDragged(float x, float y);
+  void LeftMouseUp(float x, float y);
+
+  void RightMouseDown(float x, float y);
+  void RightMouseDragged(float x, float y);
+  void RightMouseUp(float x, float y);
 
  private:
   Engine::Shader shader;
 
-  using TimePoint = std::chrono::high_resolution_clock::time_point;
-  TimePoint timeStart;
-  TimePoint timeEnd;
-  std::vector<std::chrono::duration<double, std::milli>> durations;
-  std::string LogTimeDuration(int);
+  Engine::Vector3 move;
+  Engine::Vector3 angle;
+  Engine::Vector3 positionCursor;
 };
 
 #endif  // SCENE_HPP
