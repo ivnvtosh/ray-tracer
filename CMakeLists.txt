@@ -23,7 +23,22 @@ include_directories(
   ${OPENCL_INCLUDE_DIR}
   Application
   ApplicationMacOS
-  Engine/Include
+
+  Core
+  Core/Matrix3x3
+  Core/Size
+  Core/Vector2
+  Core/Vector3
+
+  Engine
+  Engine/Camera
+  Engine/Logger
+  Engine/OBJImporter
+  Engine/PPMExporter
+  Engine/Shader
+  Engine/Time
+  Engine/TriangleMesh
+
   Scene
 )
 
@@ -32,17 +47,19 @@ add_executable(ray-tracer
   Application/Application.cpp
   ApplicationMacOS/ApplicationMacOS.mm
   ApplicationMacOS/MainWindow.mm
-  Engine/Source/Camera.cpp
-  Engine/Source/Matrix3x3.cpp
-  Engine/Source/Logger.cpp
-  Engine/Source/Matrix3x3.cpp
-  Engine/Source/OBJImporter.cpp
-  Engine/Source/PPMExporter.cpp
-  Engine/Source/Shader.cpp
-  Engine/Source/Size.cpp
-  Engine/Source/Time.cpp
-  Engine/Source/Vector2.cpp
-  Engine/Source/Vector3.cpp
+
+  Core/Matrix3x3/Matrix3x3.cpp
+  Core/Size/Size.cpp
+  Core/Vector2/Vector2.cpp
+  Core/Vector3/Vector3.cpp
+
+  Engine/Camera/Camera.cpp
+  Engine/Logger/Logger.cpp
+  Engine/OBJImporter/OBJImporter.cpp
+  Engine/PPMExporter/PPMExporter.cpp
+  Engine/Shader/Shader.cpp
+  Engine/Time/Time.cpp
+
   Scene/Scene.cpp
   Scene/Scene+Events.cpp
 )

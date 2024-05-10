@@ -33,7 +33,7 @@ struct Vector3 {
   Vector3& operator/=(Vector3) noexcept;
 
  private:
-  float eps = 0.0001f;
+  static float eps;
 };
 
 Vector3 operator+(float, Vector3) noexcept;

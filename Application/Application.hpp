@@ -1,7 +1,6 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
-#include "Model.hpp"
 #include "Scene.hpp"
 
 struct s_app {

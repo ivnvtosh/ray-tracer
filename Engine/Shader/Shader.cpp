@@ -211,7 +211,7 @@ void Engine::Shader::CreateKernel() {
 
   auto program = CreateProgram();
 
-  err = clBuildProgram(program, 1, &device, "-I ../Engine/Source", NULL, NULL);
+  err = clBuildProgram(program, 1, &device, "-I ../Engine/Shader", NULL, NULL);
   if (err != 0) {
     size_t size;
     clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL,
@@ -267,7 +267,7 @@ cl_program Engine::Shader::CreateProgram() {
 void Engine::Shader::ReadFilesToBuffer(char **program_buf,
                                        size_t *program_size) {
   program_buf[0] =
-      ReadFileToBuffer("../Engine/Source/kernel.cl", &program_size[0]);
+      ReadFileToBuffer("../Engine/Shader/kernel.cl", &program_size[0]);
 }
 
 char *Engine::Shader::ReadFileToBuffer(const char *name, size_t *program_size) {

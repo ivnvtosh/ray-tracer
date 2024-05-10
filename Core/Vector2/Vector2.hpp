@@ -26,7 +26,7 @@ struct Vector2 {
   Vector2& operator/=(Vector2) noexcept;
 
  private:
-  float eps = 0.0001f;
+  static float eps;
 };
 
 }  // namespace Engine

@@ -3,12 +3,8 @@
 
 #include <functional>
 
+#include "Engine.hpp"
 #include "Model.hpp"
-#include "OBJImporter.hpp"
-#include "PPMExporter.hpp"
-#include "Shader.hpp"
-#include "Time.hpp"
-#include "Vector2.hpp"
 
 class Scene {
  public:

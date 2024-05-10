@@ -4,6 +4,8 @@
 
 using namespace Engine;
 
+float Vector3::eps = 0.0001f;
+
 Vector3 Vector3::Zero() noexcept { return {0, 0, 0}; }
 
 Vector3::Vector3(float x, float y, float z) noexcept : x(x), y(y), z(z) {}
