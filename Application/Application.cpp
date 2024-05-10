@@ -48,7 +48,7 @@ void Application::CreateScene() {
 
 void Application::WillCreateScene() {
   select_glContext(&app);
-  scene.Setup(app.height, app.width);
+  scene.Setup(Engine::Size(app.width, app.height));
   while (true) {
     auto start = std::chrono::high_resolution_clock::now();
     Update();

@@ -39,10 +39,12 @@ add_executable(ray-tracer
   Engine/Source/OBJImporter.cpp
   Engine/Source/PPMExporter.cpp
   Engine/Source/Shader.cpp
+  Engine/Source/Size.cpp
   Engine/Source/Time.cpp
+  Engine/Source/Vector2.cpp
   Engine/Source/Vector3.cpp
   Scene/Scene.cpp
-  Scene/Scene+Event.cpp
+  Scene/Scene+Events.cpp
 )
 
 target_link_libraries(ray-tracer

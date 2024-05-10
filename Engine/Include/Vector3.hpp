@@ -31,6 +31,9 @@ struct Vector3 {
   Vector3& operator-=(Vector3) noexcept;
   Vector3& operator*=(Vector3) noexcept;
   Vector3& operator/=(Vector3) noexcept;
+
+ private:
+  float eps = 0.0001f;
 };
 
 Vector3 operator+(float, Vector3) noexcept;

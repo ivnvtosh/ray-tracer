@@ -17,8 +17,7 @@ Vector3 Vector3::Cross(Vector3 a, Vector3 b) noexcept {
 }
 
 Vector3 Vector3::Normalized() const noexcept {
-  auto length = Length();
-  return length == 0.0f ? *this : *this / length;
+  return x == 0.0f && y == 0.0f && z == 0.0f ? *this : *this / Length();
 }
 
 float Vector3::Length() const noexcept {
@@ -26,7 +25,6 @@ float Vector3::Length() const noexcept {
 }
 
 bool Vector3::operator==(Vector3 other) const noexcept {
-  auto eps = 0.0001f;
   return std::fabs(x - other.x) < eps && std::fabs(y - other.y) < eps &&
          std::fabs(z - other.z) < eps;
 }

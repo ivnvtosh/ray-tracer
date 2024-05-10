@@ -6,14 +6,12 @@
 
 #include "kernel_shared.h"
 
-Engine::Shader::Shader(int height, int width)
-    : width(width), height(height), data(new int[height * width]) {
+Engine::Shader::Shader(Engine::Size size)
+    : data(new int[size.width * size.height]) {
+  camera.size = size;
   CreateTexture();
   CreateShaderProgram();
   UseProgram();
-
-  camera.height = height;
-  camera.width = width;
 
   GetDeviceId();
   CreateContext();
@@ -26,7 +24,7 @@ Engine::Shader::Shader(int height, int width)
 Engine::Shader::~Shader() { delete[] data; }
 
 void Engine::Shader::Update() {
-  UpdateState(0, 0, width, height);
+  UpdateState(0, 0, camera.size.width, camera.size.height);
   UpdateShader();
 }
 
@@ -39,19 +37,19 @@ void Engine::Shader::CreateTexture() noexcept {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA,
-               GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, camera.size.width,
+               camera.size.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
 
   GLfloat vertexes[8];
 
   vertexes[0] = 0.0f;
   vertexes[1] = 0.0f;
-  vertexes[2] = static_cast<GLfloat>(width);
+  vertexes[2] = static_cast<GLfloat>(camera.size.width);
   vertexes[3] = 0.0f;
-  vertexes[4] = static_cast<GLfloat>(width);
-  vertexes[5] = static_cast<GLfloat>(-height);
+  vertexes[4] = static_cast<GLfloat>(camera.size.width);
+  vertexes[5] = static_cast<GLfloat>(-camera.size.height);
   vertexes[6] = 0.0f;
-  vertexes[7] = static_cast<GLfloat>(-height);
+  vertexes[7] = static_cast<GLfloat>(-camera.size.height);
 
   glGenBuffers(1, &vbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
@@ -147,8 +145,8 @@ GLuint Engine::Shader::CreateFragmentShader() const {
 
 void Engine::Shader::UpdateShader() const noexcept {
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA,
-               GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, camera.size.width,
+               camera.size.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
 
   glUseProgram(program);
 
@@ -156,9 +154,9 @@ void Engine::Shader::UpdateShader() const noexcept {
   glBindTexture(GL_TEXTURE_2D, texture);
 
   glUniform1i(image_texture, 0);
-  glUniform2f(image_winhalfsize, width / 2, height / 2);
-  glUniform2f(image_pos, 0, height);
-  glUniform2f(image_size, width, -height);
+  glUniform2f(image_winhalfsize, camera.size.width / 2, camera.size.height / 2);
+  glUniform2f(image_pos, 0, camera.size.height);
+  glUniform2f(image_size, camera.size.width, -camera.size.height);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
@@ -293,7 +291,7 @@ char *Engine::Shader::ReadFileToBuffer(const char *name, size_t *program_size) {
 
 void Engine::Shader::LoadMem() {
   int err;
-  auto bytes = camera.height * camera.width * sizeof(int);
+  auto bytes = camera.size.height * camera.size.width * sizeof(int);
 
   output = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes, NULL, &err);
 
@@ -316,8 +314,8 @@ void Engine::Shader::UpdateState(int x, int y, int ox, int oy) const {
 
   struct s_camera c_camera;
 
-  c_camera.height = camera.height;
-  c_camera.width = camera.width;
+  c_camera.width = camera.size.width;
+  c_camera.height = camera.size.height;
   c_camera.fov = camera.GetFov();
   c_camera.focus = camera.GetFocus();
   c_camera.position.x = camera.position.x;
@@ -355,7 +353,7 @@ void Engine::Shader::UpdateState(int x, int y, int ox, int oy) const {
     throw;
   }
 
-  auto bytes = camera.height * camera.width * sizeof(int);
+  auto bytes = camera.size.width * camera.size.height * sizeof(int);
   err = clEnqueueReadBuffer(queue, output, CL_TRUE, 0, bytes, data, 0, NULL,
                             NULL);
   if (err != 0) {

@@ -2,14 +2,14 @@
 #define CAMERA_HPP
 
 #include "Matrix3x3.hpp"
+#include "Size.hpp"
 #include "Vector3.hpp"
 
 namespace Engine {
 
 struct Camera {
  public:
-  int height;
-  int width;
+  Size size;
   Vector3 position;
   Vector3 rotation;
   Matrix3x3 matrix;

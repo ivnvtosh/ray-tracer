@@ -7,10 +7,8 @@
 #include <OpenGL/gl3.h>
 
 #include "Camera.hpp"
+#include "Size.hpp"
 #include "TriangleMesh.hpp"
-
-typedef float t_col[3];
-typedef t_col t_mat[3];
 
 namespace Engine {
 
@@ -20,7 +18,7 @@ class Shader {
   int *data;
 
   Shader() = default;
-  Shader(int height, int width);
+  Shader(Engine::Size);
   ~Shader();
 
   void Update();
@@ -31,9 +29,6 @@ class Shader {
 
  private:
   TriangleMesh mesh;
-
-  int width;
-  int height;
 
   GLuint program;
   GLuint texture;

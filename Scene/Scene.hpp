@@ -8,12 +8,13 @@
 #include "PPMExporter.hpp"
 #include "Shader.hpp"
 #include "Time.hpp"
+#include "Vector2.hpp"
 
 class Scene {
  public:
   Scene() = default;
 
-  void Setup(int height, int width);
+  void Setup(Engine::Size);
 
   void Update();
 
@@ -35,7 +36,7 @@ class Scene {
   Engine::Vector3 cameraAngle;
   float cameraSpeed = 0.002f;
 
-  Engine::Vector3 positionCursor;
+  Engine::Vector2 cursorPosition;
 };
 
 #endif  // SCENE_HPP

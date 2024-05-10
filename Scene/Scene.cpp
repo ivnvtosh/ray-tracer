@@ -1,10 +1,10 @@
 #include "Scene.hpp"
 
-void Scene::Setup(int height, int width) {
+void Scene::Setup(Engine::Size size) {
   auto request = Engine::OBJRequest().Filepath("../../").Filename("untitled");
   auto mesh = Engine::OBJImporter().Import(request);
 
-  shader = Engine::Shader(height, width);
+  shader = Engine::Shader(size);
 
   shader.LoadMesh(mesh);
 

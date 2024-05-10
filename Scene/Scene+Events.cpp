@@ -63,18 +63,18 @@ void Scene::KeyUp(Key key) {
 }
 
 void Scene::LeftMouseDown(float x, float y) {
-  positionCursor.x = x;
-  positionCursor.y = y;
+  cursorPosition.x = x;
+  cursorPosition.y = y;
 }
 
 void Scene::LeftMouseDragged(float x, float y) {
   auto speed = 0.1f;
 
-  cameraAngle.x -= (x - positionCursor.x) * speed;
-  cameraAngle.y -= (y - positionCursor.y) * speed;
+  cameraAngle.x += (cursorPosition.x - x) * speed;
+  cameraAngle.y += (cursorPosition.y - y) * speed;
 
-  positionCursor.x = x;
-  positionCursor.y = y;
+  cursorPosition.x = x;
+  cursorPosition.y = y;
 }
 
 void Scene::LeftMouseUp(float x, float y) {
