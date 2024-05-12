@@ -4,6 +4,8 @@
 #include <iostream>
 #include <thread>
 
+#include "ProgressWindow.hpp"
+
 t_app createApplication(int height, int width, const char *title);
 void *createAnotherWindow(t_app *, int height, int width, const char *title);
 void loop(t_app *app);
@@ -15,6 +17,8 @@ void setModel(t_app app, Model model);
 
 Application::Application() {}
 
+void *CreateProgressWindow(ProgressWindowModel model);
+
 void Application::CreateWindow(int height, int width, const char *title) {
   app = createApplication(height, width, title);
 
@@ -24,8 +28,8 @@ void Application::CreateWindow(int height, int width, const char *title) {
   model.keyUp = [this](Key key) { KeyUp(key); };
 
   model.leftMouseDown = [this](float x, float y) { LeftMouseDown(x, y); };
-  model.leftMouseDragged = [this](float x, float y) { LeftMouseDragged(x, y); };
-  model.leftMouseUp = [this](float x, float y) { LeftMouseUp(x, y); };
+  model.leftMouseDragged = [this](float x, float y) { LeftMouseDragged(x, y);
+  }; model.leftMouseUp = [this](float x, float y) { LeftMouseUp(x, y); };
 
   model.rightMouseDown = [this](float x, float y) { RightMouseDown(x, y); };
   model.rightMouseDragged = [this](float x, float y) {
@@ -33,12 +37,14 @@ void Application::CreateWindow(int height, int width, const char *title) {
   };
   model.rightMouseUp = [this](float x, float y) { RightMouseUp(x, y); };
 
-  // model.update = [this]() { Update(); };
+  // // model.update = [this]() { Update(); };
 
   setModel(app, model);
 
-  // createAnotherWindow(&app, 48, 384, "Calculate");
-  // createWindowSettings(&app);
+  // // createAnotherWindow(&app, 48, 384, "Calculate");
+  // // createWindowSettings(&app);
+
+  ProgressWindow().Create(ProgressWindowModel());
 }
 
 void Application::CreateScene() {

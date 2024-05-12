@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # add_definitions("-Wall -Wextra -Werror -std=c++17")
+add_definitions("-std=c++17")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
   ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
@@ -23,6 +24,8 @@ include_directories(
   ${OPENCL_INCLUDE_DIR}
   Application
   ApplicationMacOS
+
+  ApplicationMacOS/ProgressWindow
 
   Core
   Core/Matrix3x3
@@ -47,7 +50,10 @@ add_executable(ray-tracer
   Application/Application.cpp
   ApplicationMacOS/ApplicationMacOS.mm
   ApplicationMacOS/MainWindow.mm
-
+  
+  ApplicationMacOS/ProgressWindow/ProgressViewController.mm
+  ApplicationMacOS/ProgressWindow/ProgressWindow.mm
+  
   Core/Matrix3x3/Matrix3x3.cpp
   Core/Size/Size.cpp
   Core/Vector2/Vector2.cpp
