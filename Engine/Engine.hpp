@@ -7,6 +7,7 @@
 #include "Logger.hpp"
 #include "OBJImporter.hpp"
 #include "PPMExporter.hpp"
+#include "RenderShader.hpp"
 #include "Shader.hpp"
 #include "Time.hpp"
 #include "TriangleMesh.hpp"

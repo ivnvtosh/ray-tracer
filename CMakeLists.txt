@@ -25,19 +25,22 @@ include_directories(
   Application
   ApplicationMacOS
 
+  ApplicationMacOS/GeneralWindow
   ApplicationMacOS/ProgressWindow
+  ApplicationMacOS/RenderWindow
 
   Core
   Core/Matrix3x3
   Core/Size
   Core/Vector2
   Core/Vector3
-
+  
   Engine
   Engine/Camera
   Engine/Logger
   Engine/OBJImporter
   Engine/PPMExporter
+  Engine/RenderShader
   Engine/Shader
   Engine/Time
   Engine/TriangleMesh
@@ -51,9 +54,15 @@ add_executable(ray-tracer
   ApplicationMacOS/ApplicationMacOS.mm
   ApplicationMacOS/MainWindow.mm
   
+  ApplicationMacOS/GeneralWindow/GeneralViewController.mm
+  ApplicationMacOS/GeneralWindow/GeneralWindow.mm
+  
   ApplicationMacOS/ProgressWindow/ProgressViewController.mm
   ApplicationMacOS/ProgressWindow/ProgressWindow.mm
   
+  ApplicationMacOS/RenderWindow/RenderViewController.mm
+  ApplicationMacOS/RenderWindow/RenderWindow.mm
+
   Core/Matrix3x3/Matrix3x3.cpp
   Core/Size/Size.cpp
   Core/Vector2/Vector2.cpp
@@ -63,9 +72,10 @@ add_executable(ray-tracer
   Engine/Logger/Logger.cpp
   Engine/OBJImporter/OBJImporter.cpp
   Engine/PPMExporter/PPMExporter.cpp
+  Engine/RenderShader/RenderShader.cpp
   Engine/Shader/Shader.cpp
   Engine/Time/Time.cpp
-
+  
   Scene/Scene.cpp
   Scene/Scene+Events.cpp
 )

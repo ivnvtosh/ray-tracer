@@ -103,11 +103,13 @@
 
 - (void) startTimer
 {
-	self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
+	dispatch_async(dispatch_get_main_queue(), ^{
+		self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
 						  target:self
 						  selector:@selector(timerFired:)
 						  userInfo:nil
 						  repeats:YES];
+	});
 }
 
 - (void) stopTimer
@@ -123,17 +125,18 @@
 	self.duration -= std::chrono::seconds(1);
 
 	if (duration_cast<seconds>(self.duration) <= seconds(0)) {
+		[self stopTimer];
+
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[self.timerTextField setStringValue:@"One moment"];
 		});
 
-		[self progressDone:seconds(12421412)];
 		return;
 	}
 
-	auto text = [self durationToString:self.duration];
-
 	dispatch_async(dispatch_get_main_queue(), ^{
+		auto text = [self durationToString:self.duration];
+
 		[self.timerTextField setStringValue:text];
 	});
 }
@@ -272,6 +275,7 @@
 	[self stopTimer];
 	[self setDuration:duration];
 	[self startTimer];
+	[self timerFired:self.timer];
 
 	dispatch_async(dispatch_get_main_queue(), ^{
 		[self.progressIndicator setIndeterminate:NO];

@@ -31,7 +31,7 @@ void ProgressWindow::Update(TimeDuration duration,
 }
 
 void ProgressWindow::Done(TimeDuration total) const noexcept {
-  [(id)viewController done];
+  [(id)viewController done:total];
 }
 
 void ProgressWindow::Close() const noexcept { [(id)window close]; }

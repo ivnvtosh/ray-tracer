@@ -1,6 +1,9 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
+#include "GeneralWindow.hpp"
+#include "ProgressWindow.hpp"
+#include "RenderWindow.hpp"
 #include "Scene.hpp"
 
 struct s_app {
@@ -30,8 +33,12 @@ class Application {
  private:
   t_app app;
   Scene scene;
+  GeneralWindow generalWindow;
+  ProgressWindow progressWindow;
+  RenderWindow renderWindow;
 
   void WillCreateScene();
+  void Render();
 
   void KeyDown(Key);
   void KeyUp(Key);

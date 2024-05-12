@@ -1,6 +1,7 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
+#include <chrono>
 #include <functional>
 
 #include "Engine.hpp"
@@ -8,11 +9,15 @@
 
 class Scene {
  public:
+  using TimeDuration = std::chrono::duration<double, std::milli>;
+
   Scene() = default;
 
   void Setup(Engine::Size);
+  void SetupRender(Engine::Size);
 
   void Update();
+  void Render(std::function<void(TimeDuration, double)> update);
 
   void KeyDown(Key);
   void KeyUp(Key);
@@ -27,6 +32,7 @@ class Scene {
 
  private:
   Engine::Shader shader;
+  Engine::RenderShader renderShader;
 
   Engine::Vector3 cameraMoveDirection = Engine::Vector3::Zero();
   Engine::Vector3 cameraAngle;
